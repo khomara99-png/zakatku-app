@@ -7,78 +7,70 @@ export default function PenyaluranPage() {
   const [uangSiap, setUangSiap] = useState(0)
   const [berasSiap, setBerasSiap] = useState(0)
   const [kasMasjid, setKasMasjid] = useState(0)
-  const [jumlahUang, setJumlahUang] = useState(0)
-  const [jumlahBeras, setJumlahBeras] = useState(0)
+  const [penerimaUang, setPenerimaUang] = useState([])
+  const [penerimaBeras, setPenerimaBeras] = useState([])
   const [riwayat, setRiwayat] = useState([])
   const [loading, setLoading] = useState(true)
   const [proses, setProses] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
+  const [previewJenis, setPreviewJenis] = useState('uang')
 
   async function fetchData() {
     setLoading(true)
 
-    // 1. Total uang zakat (fitrah + maal + fidyah) yang sudah masuk
     const { data: pUang } = await supabase
       .from('penerimaan_detail')
       .select('nominal, kategori, jenis')
       .eq('jenis', 'uang')
       .in('kategori', ['zakat_fitrah', 'zakat_maal', 'fidyah'])
-
     const totalUangMasuk = (pUang || []).reduce((s, x) => s + (x.nominal || 0), 0)
 
-    // 2. Total uang yang sudah disalurkan
     const { data: sUang } = await supabase
       .from('penyaluran')
       .select('total_dibagikan')
       .eq('jenis', 'uang')
-
     const totalUangKeluar = (sUang || []).reduce((s, x) => s + (x.total_dibagikan || 0), 0)
 
-    // 3. Total beras (fitrah+maal+fidyah+infaq beras)
     const { data: pBeras } = await supabase
       .from('penerimaan_detail')
       .select('berat_kg, jenis')
       .eq('jenis', 'beras')
-
     const totalBerasMasuk = (pBeras || []).reduce((s, x) => s + (x.berat_kg || 0), 0)
 
-    // 4. Total beras disalurkan
     const { data: sBeras } = await supabase
       .from('penyaluran')
       .select('total_dibagikan')
       .eq('jenis', 'beras')
-
     const totalBerasKeluar = (sBeras || []).reduce((s, x) => s + (x.total_dibagikan || 0), 0)
 
-    // 5. Kas masjid
     const { data: kas } = await supabase.from('kas_masjid').select('tipe, nominal')
     const saldoKas = (kas || []).reduce((s, x) => s + (x.tipe === 'masuk' ? x.nominal : -x.nominal), 0)
 
-    // 6. Jumlah mustahik aktif per flag
     const { data: musU } = await supabase
       .from('mustahik')
-      .select('id')
+      .select('id, nama, asnaf, alamat')
       .eq('aktif', true)
       .eq('penerima_uang', true)
+      .order('nama')
 
     const { data: musB } = await supabase
       .from('mustahik')
-      .select('id')
+      .select('id, nama, asnaf, alamat')
       .eq('aktif', true)
       .eq('penerima_beras', true)
+      .order('nama')
 
     setUangSiap(totalUangMasuk - totalUangKeluar)
     setBerasSiap(totalBerasMasuk - totalBerasKeluar)
     setKasMasjid(saldoKas)
-    setJumlahUang((musU || []).length)
-    setJumlahBeras((musB || []).length)
+    setPenerimaUang(musU || [])
+    setPenerimaBeras(musB || [])
 
-    // 7. Riwayat penyaluran
     const { data: riw } = await supabase
       .from('penyaluran')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(20)
-
     setRiwayat(riw || [])
     setLoading(false)
   }
@@ -87,21 +79,41 @@ export default function PenyaluranPage() {
     fetchData()
   }, [])
 
-  async function eksekusiUang() {
-    if (uangSiap <= 0) return alert('Tidak ada uang siap disalurkan')
-    if (jumlahUang <= 0) return alert('Tidak ada mustahik penerima uang')
+  const perOrangUang =
+    penerimaUang.length > 0
+      ? Math.floor(uangSiap / penerimaUang.length / 100) * 100
+      : 0
+  const sisaUang = uangSiap - perOrangUang * penerimaUang.length
 
-    // Hitung per orang (bulat ke bawah ke ratusan)
-    const perOrang = Math.floor(uangSiap / jumlahUang / 100) * 100
-    if (perOrang <= 0) return alert('Saldo terlalu kecil untuk dibagikan')
+  const perOrangBeras =
+    penerimaBeras.length > 0
+      ? Math.floor((berasSiap / penerimaBeras.length) * 1000) / 1000
+      : 0
+  const sisaBeras = berasSiap - perOrangBeras * penerimaBeras.length
 
-    const totalDibagikan = perOrang * jumlahUang
-    const sisa = uangSiap - totalDibagikan
+  function bukaPreview(jenis) {
+    if (jenis === 'uang' && uangSiap <= 0) return alert('Tidak ada uang siap disalurkan')
+    if (jenis === 'uang' && penerimaUang.length === 0) return alert('Tidak ada mustahik penerima uang')
+    if (jenis === 'beras' && berasSiap <= 0) return alert('Tidak ada beras siap disalurkan')
+    if (jenis === 'beras' && penerimaBeras.length === 0) return alert('Tidak ada mustahik penerima beras')
+    setPreviewJenis(jenis)
+    setShowPreview(true)
+  }
 
-    if (!confirm(`Salurkan Rp ${totalDibagikan.toLocaleString('id-ID')} ke ${jumlahUang} orang?\n(Rp ${perOrang.toLocaleString('id-ID')}/orang, sisa Rp ${sisa.toLocaleString('id-ID')} → kas masjid)`)) return
-
+  async function eksekusiPenyaluran() {
     setProses(true)
+    if (previewJenis === 'uang') {
+      await eksekusiUang()
+    } else {
+      await eksekusiBeras()
+    }
+    setProses(false)
+    setShowPreview(false)
+    fetchData()
+  }
 
+  async function eksekusiUang() {
+    const totalDibagikan = perOrangUang * penerimaUang.length
     const kode = `ZK-OUT-${Date.now()}`
 
     const { data: header, error: errH } = await supabase
@@ -110,68 +122,42 @@ export default function PenyaluranPage() {
         kode,
         jenis: 'uang',
         total_dibagikan: totalDibagikan,
-        total_diterima_per_orang: perOrang,
-        sisa_pembulatan: sisa,
-        jumlah_penerima: jumlahUang,
+        total_diterima_per_orang: perOrangUang,
+        sisa_pembulatan: sisaUang,
+        jumlah_penerima: penerimaUang.length,
       })
       .select()
       .single()
 
-    if (errH) {
-      setProses(false)
-      return alert('Gagal header: ' + errH.message)
-    }
+    if (errH) return alert('Gagal header: ' + errH.message)
 
-    // Ambil semua mustahik penerima uang
-    const { data: penerima } = await supabase
-      .from('mustahik')
-      .select('id')
-      .eq('aktif', true)
-      .eq('penerima_uang', true)
-
-    const details = (penerima || []).map((m) => ({
+    const details = penerimaUang.map((m) => ({
       penyaluran_id: header.id,
       mustahik_id: m.id,
-      nilai_diterima: perOrang,
+      nilai_diterima: perOrangUang,
     }))
 
     const { error: errD } = await supabase.from('penyaluran_detail').insert(details)
     if (errD) {
       await supabase.from('penyaluran').delete().eq('id', header.id)
-      setProses(false)
       return alert('Gagal detail: ' + errD.message)
     }
 
-    // Sisa pembulatan masuk kas masjid
-    if (sisa > 0) {
+    if (sisaUang > 0) {
       await supabase.from('kas_masjid').insert({
         tipe: 'masuk',
-        nominal: sisa,
+        nominal: sisaUang,
         sumber: 'sisa_pembulatan',
         keterangan: 'Sisa pembulatan penyaluran uang zakat',
         referensi_id: header.id,
       })
     }
 
-    setProses(false)
     alert('✅ Penyaluran uang berhasil!')
-    fetchData()
   }
 
   async function eksekusiBeras() {
-    if (berasSiap <= 0) return alert('Tidak ada beras siap disalurkan')
-    if (jumlahBeras <= 0) return alert('Tidak ada mustahik penerima beras')
-
-    const perOrang = Math.floor((berasSiap / jumlahBeras) * 1000) / 1000
-    if (perOrang <= 0) return alert('Saldo terlalu kecil')
-
-    const totalDibagikan = perOrang * jumlahBeras
-    const sisa = berasSiap - totalDibagikan
-
-    if (!confirm(`Salurkan ${totalDibagikan.toFixed(3)} kg ke ${jumlahBeras} orang?\n(${perOrang.toFixed(3)} kg/orang, sisa ${sisa.toFixed(3)} kg)`)) return
-
-    setProses(true)
-
+    const totalDibagikan = perOrangBeras * penerimaBeras.length
     const kode = `ZK-OUT-${Date.now()}`
 
     const { data: header, error: errH } = await supabase
@@ -180,40 +166,28 @@ export default function PenyaluranPage() {
         kode,
         jenis: 'beras',
         total_dibagikan: totalDibagikan,
-        total_diterima_per_orang: perOrang,
+        total_diterima_per_orang: perOrangBeras,
         sisa_pembulatan: 0,
-        jumlah_penerima: jumlahBeras,
+        jumlah_penerima: penerimaBeras.length,
       })
       .select()
       .single()
 
-    if (errH) {
-      setProses(false)
-      return alert('Gagal header: ' + errH.message)
-    }
+    if (errH) return alert('Gagal header: ' + errH.message)
 
-    const { data: penerima } = await supabase
-      .from('mustahik')
-      .select('id')
-      .eq('aktif', true)
-      .eq('penerima_beras', true)
-
-    const details = (penerima || []).map((m) => ({
+    const details = penerimaBeras.map((m) => ({
       penyaluran_id: header.id,
       mustahik_id: m.id,
-      nilai_diterima: perOrang,
+      nilai_diterima: perOrangBeras,
     }))
 
     const { error: errD } = await supabase.from('penyaluran_detail').insert(details)
     if (errD) {
       await supabase.from('penyaluran').delete().eq('id', header.id)
-      setProses(false)
       return alert('Gagal detail: ' + errD.message)
     }
 
-    setProses(false)
     alert('✅ Penyaluran beras berhasil!')
-    fetchData()
   }
 
   async function hapusPenyaluran(id) {
@@ -222,9 +196,6 @@ export default function PenyaluranPage() {
     if (error) alert('Gagal: ' + error.message)
     fetchData()
   }
-
-  const perOrangUang = jumlahUang > 0 ? Math.floor(uangSiap / jumlahUang / 100) * 100 : 0
-  const perOrangBeras = jumlahBeras > 0 ? Math.floor((berasSiap / jumlahBeras) * 1000) / 1000 : 0
 
   return (
     <main className="max-w-7xl mx-auto p-6">
@@ -237,7 +208,6 @@ export default function PenyaluranPage() {
         <div className="bg-white rounded-xl shadow p-8 text-center text-gray-500">Memuat...</div>
       ) : (
         <>
-          {/* Kartu Saldo */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-white rounded-xl shadow p-5">
               <p className="text-xs text-gray-500 uppercase">💵 Uang Siap Salur</p>
@@ -245,7 +215,7 @@ export default function PenyaluranPage() {
                 Rp {uangSiap.toLocaleString('id-ID')}
               </p>
               <p className="text-xs text-gray-500 mt-2">
-                Penerima: {jumlahUang} orang
+                Penerima: {penerimaUang.length} orang
               </p>
               <p className="text-xs text-gray-500">
                 Per orang: Rp {perOrangUang.toLocaleString('id-ID')}
@@ -258,7 +228,7 @@ export default function PenyaluranPage() {
                 {berasSiap.toFixed(3)} kg
               </p>
               <p className="text-xs text-gray-500 mt-2">
-                Penerima: {jumlahBeras} orang
+                Penerima: {penerimaBeras.length} orang
               </p>
               <p className="text-xs text-gray-500">
                 Per orang: {perOrangBeras.toFixed(3)} kg
@@ -276,10 +246,9 @@ export default function PenyaluranPage() {
             </div>
           </div>
 
-          {/* Tombol Eksekusi */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <button
-              onClick={eksekusiUang}
+              onClick={() => bukaPreview('uang')}
               disabled={proses || uangSiap <= 0}
               className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white py-3 rounded-xl font-medium text-lg"
             >
@@ -287,7 +256,7 @@ export default function PenyaluranPage() {
             </button>
 
             <button
-              onClick={eksekusiBeras}
+              onClick={() => bukaPreview('beras')}
               disabled={proses || berasSiap <= 0}
               className="bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 text-white py-3 rounded-xl font-medium text-lg"
             >
@@ -295,50 +264,8 @@ export default function PenyaluranPage() {
             </button>
           </div>
 
-          {/* Riwayat */}
           <div className="bg-white rounded-xl shadow overflow-hidden">
             <div className="px-4 py-3 bg-gray-50 border-b">
-              <table className="w-full text-left text-sm">
-  <thead className="bg-gray-50 text-gray-600">
-    <tr>
-      <th className="px-4 py-2">Kode</th>
-      <th className="px-4 py-2">Tanggal</th>
-      <th className="px-4 py-2">Jenis</th>
-      <th className="px-4 py-2 text-right">Total</th>
-      <th className="px-4 py-2 text-center">Per Orang</th>
-      <th className="px-4 py-2 text-center">Penerima</th>
-      <th className="px-4 py-2 text-center">Aksi</th>
-    </tr>
-  </thead>
-  <tbody className="text-gray-800">
-    {riwayat.map((r) => (
-      <tr key={r.id} className="border-t hover:bg-gray-50">
-        <td className="px-4 py-2 font-mono text-xs text-gray-700">{r.kode}</td>
-        <td className="px-4 py-2 text-gray-700">{r.tanggal}</td>
-        <td className="px-4 py-2 capitalize text-gray-700">{r.jenis}</td>
-        <td className="px-4 py-2 text-right font-medium text-gray-800">
-          {r.jenis === 'uang'
-            ? `Rp ${(r.total_dibagikan || 0).toLocaleString('id-ID')}`
-            : `${(r.total_dibagikan || 0).toFixed(3)} kg`}
-        </td>
-        <td className="px-4 py-2 text-center text-gray-700">
-          {r.jenis === 'uang'
-            ? `Rp ${(r.total_diterima_per_orang || 0).toLocaleString('id-ID')}`
-            : `${(r.total_diterima_per_orang || 0).toFixed(3)} kg`}
-        </td>
-        <td className="px-4 py-2 text-center text-gray-700">{r.jumlah_penerima}</td>
-        <td className="px-4 py-2 text-center">
-          <button
-            onClick={() => hapusPenyaluran(r.id)}
-            className="text-red-600 hover:underline text-xs"
-          >
-            Hapus
-          </button>
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</table>
               <h2 className="font-semibold text-gray-700">Riwayat Penyaluran</h2>
             </div>
             {riwayat.length === 0 ? (
@@ -358,23 +285,23 @@ export default function PenyaluranPage() {
                     <th className="px-4 py-2 text-center">Aksi</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="text-gray-800">
                   {riwayat.map((r) => (
                     <tr key={r.id} className="border-t hover:bg-gray-50">
-                      <td className="px-4 py-2 font-mono text-xs">{r.kode}</td>
-                      <td className="px-4 py-2 text-gray-600">{r.tanggal}</td>
-                      <td className="px-4 py-2 capitalize">{r.jenis}</td>
-                      <td className="px-4 py-2 text-right font-medium">
+                      <td className="px-4 py-2 font-mono text-xs text-gray-700">{r.kode}</td>
+                      <td className="px-4 py-2 text-gray-700">{r.tanggal}</td>
+                      <td className="px-4 py-2 capitalize text-gray-700">{r.jenis}</td>
+                      <td className="px-4 py-2 text-right font-medium text-gray-800">
                         {r.jenis === 'uang'
                           ? `Rp ${(r.total_dibagikan || 0).toLocaleString('id-ID')}`
                           : `${(r.total_dibagikan || 0).toFixed(3)} kg`}
                       </td>
-                      <td className="px-4 py-2 text-center">
+                      <td className="px-4 py-2 text-center text-gray-700">
                         {r.jenis === 'uang'
                           ? `Rp ${(r.total_diterima_per_orang || 0).toLocaleString('id-ID')}`
                           : `${(r.total_diterima_per_orang || 0).toFixed(3)} kg`}
                       </td>
-                      <td className="px-4 py-2 text-center">{r.jumlah_penerima}</td>
+                      <td className="px-4 py-2 text-center text-gray-700">{r.jumlah_penerima}</td>
                       <td className="px-4 py-2 text-center">
                         <button
                           onClick={() => hapusPenyaluran(r.id)}
@@ -390,6 +317,108 @@ export default function PenyaluranPage() {
             )}
           </div>
         </>
+      )}
+
+      {showPreview && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full my-8">
+            <div className="px-6 py-4 border-b">
+              <h2 className="text-xl font-bold text-gray-800">
+                {previewJenis === 'uang' ? '💵 Konfirmasi Penyaluran Uang' : '🍚 Konfirmasi Penyaluran Beras'}
+              </h2>
+              <p className="text-sm text-gray-500">
+                Periksa daftar penerima sebelum eksekusi
+              </p>
+            </div>
+
+            <div className="p-6">
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="bg-emerald-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-600 uppercase">Total Dibagikan</p>
+                  <p className="text-lg font-bold text-emerald-700">
+                    {previewJenis === 'uang'
+                      ? `Rp ${(perOrangUang * penerimaUang.length).toLocaleString('id-ID')}`
+                      : `${(perOrangBeras * penerimaBeras.length).toFixed(3)} kg`}
+                  </p>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-600 uppercase">Per Orang</p>
+                  <p className="text-lg font-bold text-blue-700">
+                    {previewJenis === 'uang'
+                      ? `Rp ${perOrangUang.toLocaleString('id-ID')}`
+                      : `${perOrangBeras.toFixed(3)} kg`}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-600 uppercase">Jumlah Penerima</p>
+                  <p className="text-lg font-bold text-gray-800">
+                    {previewJenis === 'uang' ? penerimaUang.length : penerimaBeras.length} orang
+                  </p>
+                </div>
+                <div className="bg-amber-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-600 uppercase">
+                    {previewJenis === 'uang' ? 'Sisa → Kas Masjid' : 'Sisa Pembulatan'}
+                  </p>
+                  <p className="text-lg font-bold text-amber-700">
+                    {previewJenis === 'uang'
+                      ? `Rp ${sisaUang.toLocaleString('id-ID')}`
+                      : `${sisaBeras.toFixed(3)} kg`}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700">
+                  📋 Daftar Penerima ({(previewJenis === 'uang' ? penerimaUang : penerimaBeras).length} orang)
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-gray-50 text-gray-600 sticky top-0">
+                      <tr>
+                        <th className="px-4 py-2 text-center w-12">No</th>
+                        <th className="px-4 py-2">Nama</th>
+                        <th className="px-4 py-2">Asnaf</th>
+                        <th className="px-4 py-2 text-right">Diterima</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-gray-700">
+                      {(previewJenis === 'uang' ? penerimaUang : penerimaBeras).map((m, i) => (
+                        <tr key={m.id} className="border-t hover:bg-gray-50">
+                          <td className="px-4 py-2 text-center text-gray-500">{i + 1}</td>
+                          <td className="px-4 py-2 font-medium text-gray-800">{m.nama}</td>
+                          <td className="px-4 py-2 capitalize text-gray-600">{m.asnaf || '-'}</td>
+                          <td className="px-4 py-2 text-right font-medium text-emerald-700">
+                            {previewJenis === 'uang'
+                              ? `Rp ${perOrangUang.toLocaleString('id-ID')}`
+                              : `${perOrangBeras.toFixed(3)} kg`}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowPreview(false)}
+                  disabled={proses}
+                  className="flex-1 border border-gray-300 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-50 font-medium"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={eksekusiPenyaluran}
+                  disabled={proses}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white px-4 py-3 rounded-lg font-medium"
+                >
+                  {proses ? 'Memproses...' : '✅ Salurkan Sekarang'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   )
