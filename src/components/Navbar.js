@@ -7,6 +7,7 @@ const menu = [
   { href: '/', label: '🏠 Dashboard' },
   { href: '/muzakki', label: '👥 Muzakki' },
   { href: '/mustahik', label: '🤲 Mustahik' },
+  { href: '/penerimaan', label: '📥 Penerimaan' },
 ]
 
 export default function Navbar() {
