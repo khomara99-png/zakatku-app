@@ -8,6 +8,7 @@ const menu = [
   { href: '/muzakki', label: '👥 Muzakki' },
   { href: '/mustahik', label: '🤲 Mustahik' },
   { href: '/penerimaan', label: '📥 Penerimaan' },
+  { href: '/penyaluran', label: '📤 Penyaluran' },
 ]
 
 export default function Navbar() {
@@ -15,11 +16,11 @@ export default function Navbar() {
 
   return (
     <nav className="bg-emerald-700 text-white shadow-md">
-      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         <Link href="/" className="font-bold text-lg">
           🕌 ZakatKu
         </Link>
-        <div className="flex gap-1">
+        <div className="flex gap-1 flex-wrap">
           {menu.map((m) => (
             <Link
               key={m.href}
