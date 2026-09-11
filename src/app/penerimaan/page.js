@@ -20,7 +20,7 @@ export default function PenerimaanPage() {
     muzakki_id: '',
     kategori: 'zakat_fitrah',
     jenis: 'uang',
-    jumlah_jiwa: 1,
+    jumlah_jiwa: '',
     nominal: '',
     berat_kg: '',
     catatan: '',
@@ -38,17 +38,13 @@ export default function PenerimaanPage() {
       supabase.from('pengaturan').select('*'),
     ])
 
-    if (resPenerimaan.error) alert('Gagal: ' + resPenerimaan.error.message)
-    else setList(resPenerimaan.data || [])
-
+    if (!resPenerimaan.error) setList(resPenerimaan.data || [])
     if (!resMuzakki.error) setMuzakkiList(resMuzakki.data || [])
-
     if (!resPengaturan.error) {
       const map = {}
       ;(resPengaturan.data || []).forEach((p) => (map[p.key] = Number(p.value)))
       setPengaturan(map)
     }
-
     setLoading(false)
   }
 
@@ -61,7 +57,7 @@ export default function PenerimaanPage() {
 
     const nishabUang = pengaturan.nishab_fitrah_uang || 45000
     const nishabBeras = pengaturan.nishab_fitrah_beras || 2.5
-    const jiwa = parseInt(form.jumlah_jiwa) || 1
+    const jiwa = parseInt(form.jumlah_jiwa) || 0
 
     if (form.kategori === 'zakat_fitrah' && form.jenis === 'uang') {
       const kewajiban = nishabUang * jiwa
@@ -101,7 +97,7 @@ export default function PenerimaanPage() {
       muzakki_id: '',
       kategori: 'zakat_fitrah',
       jenis: 'uang',
-      jumlah_jiwa: 1,
+      jumlah_jiwa: '',
       nominal: '',
       berat_kg: '',
       catatan: '',
@@ -112,7 +108,7 @@ export default function PenerimaanPage() {
 
   function handleMuzakkiChange(id) {
     const m = muzakkiList.find((x) => x.id === id)
-    setForm({ ...form, muzakki_id: id, jumlah_jiwa: m ? m.jumlah_jiwa : 1 })
+    setForm({ ...form, muzakki_id: id, jumlah_jiwa: m ? String(m.jumlah_jiwa) : '' })
   }
 
   async function handleSubmit(e) {
@@ -168,7 +164,7 @@ export default function PenerimaanPage() {
       if (zakat <= 0) return alert('Total harta harus > 0')
       details.push({ penerimaan_id: header.id, kategori: 'zakat_maal', jenis: 'uang', nominal: zakat })
     } else if (form.kategori === 'fidyah') {
-      const hari = parseInt(form.jumlah_jiwa) || 1
+      const hari = jiwa
       const nilaiPerHari = pengaturan.nilai_fidyah_uang || 15000
       details.push({ penerimaan_id: header.id, kategori: 'fidyah', jenis: 'uang', nominal: hari * nilaiPerHari })
     } else if (form.kategori === 'infaq_shodaqoh') {
@@ -197,6 +193,8 @@ export default function PenerimaanPage() {
 
   const inputClass =
     'w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500'
+
+  const onlyDigits = (v) => v.replace(/\D/g, '')
 
   return (
     <main className="max-w-6xl mx-auto p-6">
@@ -288,17 +286,40 @@ export default function PenerimaanPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah Jiwa</label>
-                    <input type="number" min="1" value={form.jumlah_jiwa} onChange={(e) => setForm({ ...form, jumlah_jiwa: parseInt(e.target.value) || 1 })} className={inputClass} />
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={form.jumlah_jiwa}
+                      onChange={(e) => setForm({ ...form, jumlah_jiwa: onlyDigits(e.target.value) })}
+                      className={inputClass}
+                      placeholder="Contoh: 3"
+                    />
                   </div>
                   {form.jenis === 'uang' ? (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Nominal (Rp) *</label>
-                      <input type="number" value={form.nominal} onChange={(e) => setForm({ ...form, nominal: e.target.value })} className={inputClass} placeholder="200000" required />
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={form.nominal}
+                        onChange={(e) => setForm({ ...form, nominal: onlyDigits(e.target.value) })}
+                        className={inputClass}
+                        placeholder="Contoh: 200000"
+                        required
+                      />
                     </div>
                   ) : (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Berat (kg) *</label>
-                      <input type="number" step="0.1" value={form.berat_kg} onChange={(e) => setForm({ ...form, berat_kg: e.target.value })} className={inputClass} placeholder="10" required />
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={form.berat_kg}
+                        onChange={(e) => setForm({ ...form, berat_kg: e.target.value.replace(/[^0-9.]/g, '') })}
+                        className={inputClass}
+                        placeholder="Contoh: 10"
+                        required
+                      />
                     </div>
                   )}
                 </>
@@ -307,7 +328,15 @@ export default function PenerimaanPage() {
               {form.kategori === 'zakat_maal' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Total Harta (Rp) *</label>
-                  <input type="number" value={form.nominal} onChange={(e) => setForm({ ...form, nominal: e.target.value })} className={inputClass} placeholder="50000000" required />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={form.nominal}
+                    onChange={(e) => setForm({ ...form, nominal: onlyDigits(e.target.value) })}
+                    className={inputClass}
+                    placeholder="Contoh: 50000000"
+                    required
+                  />
                   <p className="text-xs text-gray-500 mt-1">Zakat = 2.5% otomatis</p>
                 </div>
               )}
@@ -315,7 +344,15 @@ export default function PenerimaanPage() {
               {form.kategori === 'fidyah' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah Hari *</label>
-                  <input type="number" min="1" value={form.jumlah_jiwa} onChange={(e) => setForm({ ...form, jumlah_jiwa: parseInt(e.target.value) || 1 })} className={inputClass} required />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={form.jumlah_jiwa}
+                    onChange={(e) => setForm({ ...form, jumlah_jiwa: onlyDigits(e.target.value) })}
+                    className={inputClass}
+                    placeholder="Contoh: 7"
+                    required
+                  />
                   <p className="text-xs text-gray-500 mt-1">Rp 15.000/hari</p>
                 </div>
               )}
@@ -323,7 +360,15 @@ export default function PenerimaanPage() {
               {form.kategori === 'infaq_shodaqoh' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nominal (Rp) *</label>
-                  <input type="number" value={form.nominal} onChange={(e) => setForm({ ...form, nominal: e.target.value })} className={inputClass} placeholder="50000" required />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={form.nominal}
+                    onChange={(e) => setForm({ ...form, nominal: onlyDigits(e.target.value) })}
+                    className={inputClass}
+                    placeholder="Contoh: 50000"
+                    required
+                  />
                 </div>
               )}
 
