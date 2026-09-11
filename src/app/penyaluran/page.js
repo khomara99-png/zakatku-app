@@ -9,6 +9,8 @@ export default function PenyaluranPage() {
   const [kasMasjid, setKasMasjid] = useState(0)
   const [penerimaUang, setPenerimaUang] = useState([])
   const [penerimaBeras, setPenerimaBeras] = useState([])
+  const [totalPenerimaUang, setTotalPenerimaUang] = useState(0)
+  const [totalPenerimaBeras, setTotalPenerimaBeras] = useState(0)
   const [riwayat, setRiwayat] = useState([])
   const [loading, setLoading] = useState(true)
   const [proses, setProses] = useState(false)
@@ -18,6 +20,7 @@ export default function PenyaluranPage() {
   async function fetchData() {
     setLoading(true)
 
+    // Uang masuk
     const { data: pUang } = await supabase
       .from('penerimaan_detail')
       .select('nominal, kategori, jenis')
@@ -25,32 +28,47 @@ export default function PenyaluranPage() {
       .in('kategori', ['zakat_fitrah', 'zakat_maal', 'fidyah'])
     const totalUangMasuk = (pUang || []).reduce((s, x) => s + (x.nominal || 0), 0)
 
+    // Uang keluar
     const { data: sUang } = await supabase
       .from('penyaluran')
       .select('total_dibagikan')
       .eq('jenis', 'uang')
     const totalUangKeluar = (sUang || []).reduce((s, x) => s + (x.total_dibagikan || 0), 0)
 
+    // Beras masuk
     const { data: pBeras } = await supabase
       .from('penerimaan_detail')
       .select('berat_kg, jenis')
       .eq('jenis', 'beras')
     const totalBerasMasuk = (pBeras || []).reduce((s, x) => s + (x.berat_kg || 0), 0)
 
+    // Beras keluar
     const { data: sBeras } = await supabase
       .from('penyaluran')
       .select('total_dibagikan')
       .eq('jenis', 'beras')
     const totalBerasKeluar = (sBeras || []).reduce((s, x) => s + (x.total_dibagikan || 0), 0)
 
+    // Kas masjid
     const { data: kas } = await supabase.from('kas_masjid').select('tipe, nominal')
     const saldoKas = (kas || []).reduce((s, x) => s + (x.tipe === 'masuk' ? x.nominal : -x.nominal), 0)
 
+    // Hitung total mustahik aktif per flag
+    const { data: allMus } = await supabase
+      .from('mustahik')
+      .select('id, penerima_uang, penerima_beras, sudah_dapat_uang, sudah_dapat_beras')
+      .eq('aktif', true)
+
+    const totalPU = (allMus || []).filter((m) => m.penerima_uang).length
+    const totalPB = (allMus || []).filter((m) => m.penerima_beras).length
+
+    // Ambil penerima yang BELUM dapat
     const { data: musU } = await supabase
       .from('mustahik')
       .select('id, nama, asnaf, alamat')
       .eq('aktif', true)
       .eq('penerima_uang', true)
+      .eq('sudah_dapat_uang', false)
       .order('nama')
 
     const { data: musB } = await supabase
@@ -58,6 +76,7 @@ export default function PenyaluranPage() {
       .select('id, nama, asnaf, alamat')
       .eq('aktif', true)
       .eq('penerima_beras', true)
+      .eq('sudah_dapat_beras', false)
       .order('nama')
 
     setUangSiap(totalUangMasuk - totalUangKeluar)
@@ -65,6 +84,8 @@ export default function PenyaluranPage() {
     setKasMasjid(saldoKas)
     setPenerimaUang(musU || [])
     setPenerimaBeras(musB || [])
+    setTotalPenerimaUang(totalPU)
+    setTotalPenerimaBeras(totalPB)
 
     const { data: riw } = await supabase
       .from('penyaluran')
@@ -93,9 +114,11 @@ export default function PenyaluranPage() {
 
   function bukaPreview(jenis) {
     if (jenis === 'uang' && uangSiap <= 0) return alert('Tidak ada uang siap disalurkan')
-    if (jenis === 'uang' && penerimaUang.length === 0) return alert('Tidak ada mustahik penerima uang')
+    if (jenis === 'uang' && penerimaUang.length === 0)
+      return alert('Semua mustahik sudah dapat uang, atau tidak ada penerima uang. Klik "Reset Giliran" kalau mau ulang.')
     if (jenis === 'beras' && berasSiap <= 0) return alert('Tidak ada beras siap disalurkan')
-    if (jenis === 'beras' && penerimaBeras.length === 0) return alert('Tidak ada mustahik penerima beras')
+    if (jenis === 'beras' && penerimaBeras.length === 0)
+      return alert('Semua mustahik sudah dapat beras, atau tidak ada penerima beras. Klik "Reset Giliran" kalau mau ulang.')
     setPreviewJenis(jenis)
     setShowPreview(true)
   }
@@ -143,6 +166,13 @@ export default function PenyaluranPage() {
       return alert('Gagal detail: ' + errD.message)
     }
 
+    // Tandai sudah dapat
+    const ids = penerimaUang.map((m) => m.id)
+    await supabase
+      .from('mustahik')
+      .update({ sudah_dapat_uang: true })
+      .in('id', ids)
+
     if (sisaUang > 0) {
       await supabase.from('kas_masjid').insert({
         tipe: 'masuk',
@@ -187,7 +217,24 @@ export default function PenyaluranPage() {
       return alert('Gagal detail: ' + errD.message)
     }
 
+    // Tandai sudah dapat
+    const ids = penerimaBeras.map((m) => m.id)
+    await supabase
+      .from('mustahik')
+      .update({ sudah_dapat_beras: true })
+      .in('id', ids)
+
     alert('✅ Penyaluran beras berhasil!')
+  }
+
+  async function resetGiliran() {
+    if (!confirm('Reset giliran? Semua mustahik akan dianggap BELUM pernah dapat.')) return
+    await supabase
+      .from('mustahik')
+      .update({ sudah_dapat_uang: false, sudah_dapat_beras: false })
+      .neq('id', '00000000-0000-0000-0000-000000000000')
+    alert('✅ Giliran direset!')
+    fetchData()
   }
 
   async function hapusPenyaluran(id) {
@@ -199,9 +246,17 @@ export default function PenyaluranPage() {
 
   return (
     <main className="max-w-7xl mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">📤 Penyaluran Zakat</h1>
-        <p className="text-gray-500 text-sm">Bagi zakat ke mustahik yang berhak</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">📤 Penyaluran Zakat</h1>
+          <p className="text-gray-500 text-sm">Bagi zakat ke mustahik yang berhak</p>
+        </div>
+        <button
+          onClick={resetGiliran}
+          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium text-sm"
+        >
+          🔄 Reset Giliran
+        </button>
       </div>
 
       {loading ? (
@@ -215,7 +270,7 @@ export default function PenyaluranPage() {
                 Rp {uangSiap.toLocaleString('id-ID')}
               </p>
               <p className="text-xs text-gray-500 mt-2">
-                Penerima: {penerimaUang.length} orang
+                Belum dapat: {penerimaUang.length} / {totalPenerimaUang} orang
               </p>
               <p className="text-xs text-gray-500">
                 Per orang: Rp {perOrangUang.toLocaleString('id-ID')}
@@ -228,7 +283,7 @@ export default function PenyaluranPage() {
                 {berasSiap.toFixed(3)} kg
               </p>
               <p className="text-xs text-gray-500 mt-2">
-                Penerima: {penerimaBeras.length} orang
+                Belum dapat: {penerimaBeras.length} / {totalPenerimaBeras} orang
               </p>
               <p className="text-xs text-gray-500">
                 Per orang: {perOrangBeras.toFixed(3)} kg
@@ -249,7 +304,7 @@ export default function PenyaluranPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <button
               onClick={() => bukaPreview('uang')}
-              disabled={proses || uangSiap <= 0}
+              disabled={proses || uangSiap <= 0 || penerimaUang.length === 0}
               className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white py-3 rounded-xl font-medium text-lg"
             >
               {proses ? 'Memproses...' : `💵 Salurkan Uang (Rp ${perOrangUang.toLocaleString('id-ID')}/orang)`}
@@ -257,7 +312,7 @@ export default function PenyaluranPage() {
 
             <button
               onClick={() => bukaPreview('beras')}
-              disabled={proses || berasSiap <= 0}
+              disabled={proses || berasSiap <= 0 || penerimaBeras.length === 0}
               className="bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 text-white py-3 rounded-xl font-medium text-lg"
             >
               {proses ? 'Memproses...' : `🍚 Salurkan Beras (${perOrangBeras.toFixed(3)} kg/orang)`}
@@ -369,7 +424,7 @@ export default function PenyaluranPage() {
 
               <div className="border rounded-lg overflow-hidden">
                 <div className="bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700">
-                  📋 Daftar Penerima ({(previewJenis === 'uang' ? penerimaUang : penerimaBeras).length} orang)
+                  📋 Daftar Penerima ({(previewJenis === 'uang' ? penerimaUang : penerimaBeras).length} orang — yang belum dapat)
                 </div>
                 <div className="max-h-64 overflow-y-auto">
                   <table className="w-full text-left text-sm">
