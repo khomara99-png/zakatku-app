@@ -20,31 +20,53 @@ export default function MustahikPage() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({
-    nama: '', alamat: '', no_hp: '', asnaf: 'fakir', jumlah_jiwa: 1,
-    penerima_uang: true, penerima_beras: true,
+    nama: '',
+    alamat: '',
+    no_hp: '',
+    asnaf: 'fakir',
+    jumlah_jiwa: '',
+    penerima_uang: true,
+    penerima_beras: true,
   })
 
   async function fetchData() {
     setLoading(true)
-    const { data, error } = await supabase.from('mustahik').select('*').order('created_at', { ascending: false })
+    const { data, error } = await supabase
+      .from('mustahik')
+      .select('*')
+      .order('created_at', { ascending: false })
     if (!error) setList(data || [])
     setLoading(false)
   }
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => {
+    fetchData()
+  }, [])
 
   function handleTambah() {
     setEditing(null)
-    setForm({ nama: '', alamat: '', no_hp: '', asnaf: 'fakir', jumlah_jiwa: 1, penerima_uang: true, penerima_beras: true })
+    setForm({
+      nama: '',
+      alamat: '',
+      no_hp: '',
+      asnaf: 'fakir',
+      jumlah_jiwa: '',
+      penerima_uang: true,
+      penerima_beras: true,
+    })
     setShowForm(true)
   }
 
   function handleEdit(item) {
     setEditing(item.id)
     setForm({
-      nama: item.nama || '', alamat: item.alamat || '', no_hp: item.no_hp || '',
-      asnaf: item.asnaf || 'fakir', jumlah_jiwa: item.jumlah_jiwa || 1,
-      penerima_uang: item.penerima_uang ?? true, penerima_beras: item.penerima_beras ?? true,
+      nama: item.nama || '',
+      alamat: item.alamat || '',
+      no_hp: item.no_hp || '',
+      asnaf: item.asnaf || 'fakir',
+      jumlah_jiwa: item.jumlah_jiwa || '',
+      penerima_uang: item.penerima_uang ?? true,
+      penerima_beras: item.penerima_beras ?? true,
     })
     setShowForm(true)
   }
@@ -52,13 +74,25 @@ export default function MustahikPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     if (!form.nama.trim()) return alert('Nama wajib diisi')
+
+    const data = {
+      nama: form.nama,
+      alamat: form.alamat,
+      no_hp: form.no_hp,
+      asnaf: form.asnaf,
+      jumlah_jiwa: parseInt(form.jumlah_jiwa) || 1,
+      penerima_uang: form.penerima_uang,
+      penerima_beras: form.penerima_beras,
+    }
+
     if (editing) {
-      const { error } = await supabase.from('mustahik').update(form).eq('id', editing)
+      const { error } = await supabase.from('mustahik').update(data).eq('id', editing)
       if (error) alert('Gagal update: ' + error.message)
     } else {
-      const { error } = await supabase.from('mustahik').insert(form)
+      const { error } = await supabase.from('mustahik').insert(data)
       if (error) alert('Gagal tambah: ' + error.message)
     }
+
     setShowForm(false)
     fetchData()
   }
@@ -69,7 +103,9 @@ export default function MustahikPage() {
     fetchData()
   }
 
-  const inputClass = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500'
+  const inputClass =
+    'w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500'
+
   const countUang = list.filter((m) => m.penerima_uang).length
   const countBeras = list.filter((m) => m.penerima_beras).length
 
@@ -167,7 +203,17 @@ export default function MustahikPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah Jiwa</label>
-                <input type="number" min="1" value={form.jumlah_jiwa} onChange={(e) => setForm({ ...form, jumlah_jiwa: parseInt(e.target.value) || 1 })} className={inputClass} />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={form.jumlah_jiwa}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/\D/g, '')
+                    setForm({ ...form, jumlah_jiwa: v })
+                  }}
+                  className={inputClass}
+                  placeholder="Contoh: 2"
+                />
               </div>
               <div className="bg-gray-50 rounded-lg p-3 space-y-2">
                 <p className="text-sm font-medium text-gray-700">Jenis Penerimaan</p>
