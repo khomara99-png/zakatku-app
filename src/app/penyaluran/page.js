@@ -20,7 +20,6 @@ export default function PenyaluranPage() {
   async function fetchData() {
     setLoading(true)
 
-    // Uang masuk
     const { data: pUang } = await supabase
       .from('penerimaan_detail')
       .select('nominal, kategori, jenis')
@@ -28,32 +27,27 @@ export default function PenyaluranPage() {
       .in('kategori', ['zakat_fitrah', 'zakat_maal', 'fidyah'])
     const totalUangMasuk = (pUang || []).reduce((s, x) => s + (x.nominal || 0), 0)
 
-    // Uang keluar
     const { data: sUang } = await supabase
       .from('penyaluran')
       .select('total_dibagikan')
       .eq('jenis', 'uang')
     const totalUangKeluar = (sUang || []).reduce((s, x) => s + (x.total_dibagikan || 0), 0)
 
-    // Beras masuk
     const { data: pBeras } = await supabase
       .from('penerimaan_detail')
       .select('berat_kg, jenis')
       .eq('jenis', 'beras')
     const totalBerasMasuk = (pBeras || []).reduce((s, x) => s + (x.berat_kg || 0), 0)
 
-    // Beras keluar
     const { data: sBeras } = await supabase
       .from('penyaluran')
       .select('total_dibagikan')
       .eq('jenis', 'beras')
     const totalBerasKeluar = (sBeras || []).reduce((s, x) => s + (x.total_dibagikan || 0), 0)
 
-    // Kas masjid
     const { data: kas } = await supabase.from('kas_masjid').select('tipe, nominal')
     const saldoKas = (kas || []).reduce((s, x) => s + (x.tipe === 'masuk' ? x.nominal : -x.nominal), 0)
 
-    // Hitung total mustahik aktif per flag
     const { data: allMus } = await supabase
       .from('mustahik')
       .select('id, penerima_uang, penerima_beras, sudah_dapat_uang, sudah_dapat_beras')
@@ -62,7 +56,6 @@ export default function PenyaluranPage() {
     const totalPU = (allMus || []).filter((m) => m.penerima_uang).length
     const totalPB = (allMus || []).filter((m) => m.penerima_beras).length
 
-    // Ambil penerima yang BELUM dapat
     const { data: musU } = await supabase
       .from('mustahik')
       .select('id, nama, asnaf, alamat')
@@ -166,7 +159,6 @@ export default function PenyaluranPage() {
       return alert('Gagal detail: ' + errD.message)
     }
 
-    // Tandai sudah dapat
     const ids = penerimaUang.map((m) => m.id)
     await supabase
       .from('mustahik')
@@ -217,7 +209,6 @@ export default function PenyaluranPage() {
       return alert('Gagal detail: ' + errD.message)
     }
 
-    // Tandai sudah dapat
     const ids = penerimaBeras.map((m) => m.id)
     await supabase
       .from('mustahik')
