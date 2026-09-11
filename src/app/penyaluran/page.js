@@ -298,6 +298,47 @@ export default function PenyaluranPage() {
           {/* Riwayat */}
           <div className="bg-white rounded-xl shadow overflow-hidden">
             <div className="px-4 py-3 bg-gray-50 border-b">
+              <table className="w-full text-left text-sm">
+  <thead className="bg-gray-50 text-gray-600">
+    <tr>
+      <th className="px-4 py-2">Kode</th>
+      <th className="px-4 py-2">Tanggal</th>
+      <th className="px-4 py-2">Jenis</th>
+      <th className="px-4 py-2 text-right">Total</th>
+      <th className="px-4 py-2 text-center">Per Orang</th>
+      <th className="px-4 py-2 text-center">Penerima</th>
+      <th className="px-4 py-2 text-center">Aksi</th>
+    </tr>
+  </thead>
+  <tbody className="text-gray-800">
+    {riwayat.map((r) => (
+      <tr key={r.id} className="border-t hover:bg-gray-50">
+        <td className="px-4 py-2 font-mono text-xs text-gray-700">{r.kode}</td>
+        <td className="px-4 py-2 text-gray-700">{r.tanggal}</td>
+        <td className="px-4 py-2 capitalize text-gray-700">{r.jenis}</td>
+        <td className="px-4 py-2 text-right font-medium text-gray-800">
+          {r.jenis === 'uang'
+            ? `Rp ${(r.total_dibagikan || 0).toLocaleString('id-ID')}`
+            : `${(r.total_dibagikan || 0).toFixed(3)} kg`}
+        </td>
+        <td className="px-4 py-2 text-center text-gray-700">
+          {r.jenis === 'uang'
+            ? `Rp ${(r.total_diterima_per_orang || 0).toLocaleString('id-ID')}`
+            : `${(r.total_diterima_per_orang || 0).toFixed(3)} kg`}
+        </td>
+        <td className="px-4 py-2 text-center text-gray-700">{r.jumlah_penerima}</td>
+        <td className="px-4 py-2 text-center">
+          <button
+            onClick={() => hapusPenyaluran(r.id)}
+            className="text-red-600 hover:underline text-xs"
+          >
+            Hapus
+          </button>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
               <h2 className="font-semibold text-gray-700">Riwayat Penyaluran</h2>
             </div>
             {riwayat.length === 0 ? (
