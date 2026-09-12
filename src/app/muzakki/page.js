@@ -113,7 +113,7 @@ export default function MuzakkiPage() {
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow overflow-hidden">
-          <table className="w-full text-left">
+          <table className="w-full text-left text-xs md:text-sm">
             <thead className="bg-gray-100 text-gray-600 text-sm">
               <tr>
                 <th className="px-4 py-3">Nama</th>
