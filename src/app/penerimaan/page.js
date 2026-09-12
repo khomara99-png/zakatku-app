@@ -52,7 +52,6 @@ export default function PenerimaanPage() {
     fetchData()
   }, [])
 
-  // Hitung kewajiban
   const nishabUang = pengaturan.nishab_fitrah_uang || 45000
   const nishabBeras = pengaturan.nishab_fitrah_beras || 2.5
   const jiwa = parseInt(form.jumlah_jiwa) || 0
@@ -276,7 +275,10 @@ export default function PenerimaanPage() {
           <h1 className="text-2xl font-bold text-gray-800">📥 Penerimaan Zakat</h1>
           <p className="text-gray-500 text-sm">Riwayat penerimaan ({list.length} transaksi)</p>
         </div>
-        <button onClick={handleTambah} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium">
+        <button
+          onClick={handleTambah}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium text-sm"
+        >
           + Input Penerimaan
         </button>
       </div>
@@ -287,36 +289,38 @@ export default function PenerimaanPage() {
         <div className="bg-white rounded-xl shadow p-8 text-center text-gray-500">Belum ada transaksi penerimaan.</div>
       ) : (
         <div className="bg-white rounded-xl shadow overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-gray-100 text-gray-600 text-sm">
-              <tr>
-                <th className="px-4 py-3">Kode</th>
-                <th className="px-4 py-3">Muzakki</th>
-                <th className="px-4 py-3">Rincian</th>
-                <th className="px-4 py-3 text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="text-gray-800">
-              {list.map((p) => (
-                <tr key={p.id} className="border-t hover:bg-gray-50 align-top">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-600">{p.kode}</td>
-                  <td className="px-4 py-3 font-medium text-gray-800">{p.muzakki?.nama || '-'}</td>
-                  <td className="px-4 py-3 text-sm">
-                    {(p.detail || []).map((d, i) => (
-                      <div key={i} className="text-gray-700">
-                        <span className="capitalize">{d.kategori.replace('_', ' ')}</span>
-                        {d.jenis === 'uang' && d.nominal ? ` — Rp ${d.nominal.toLocaleString('id-ID')}` : ` — ${d.berat_kg} kg`}
-                        {d.is_kelebihan && <span className="ml-1 text-xs text-amber-600">(kelebihan)</span>}
-                      </div>
-                    ))}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <button onClick={() => handleHapus(p.id)} className="text-red-600 hover:underline text-sm">Hapus</button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs md:text-sm">
+              <thead className="bg-gray-100 text-gray-600">
+                <tr>
+                  <th className="px-3 py-2">Kode</th>
+                  <th className="px-3 py-2">Muzakki</th>
+                  <th className="px-3 py-2">Rincian</th>
+                  <th className="px-3 py-2 text-center">Aksi</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="text-gray-800">
+                {list.map((p) => (
+                  <tr key={p.id} className="border-t hover:bg-gray-50 align-top">
+                    <td className="px-3 py-2 font-mono text-xs text-gray-600">{p.kode}</td>
+                    <td className="px-3 py-2 font-medium text-gray-800">{p.muzakki?.nama || '-'}</td>
+                    <td className="px-3 py-2">
+                      {(p.detail || []).map((d, i) => (
+                        <div key={i} className="text-gray-700">
+                          <span className="capitalize">{d.kategori.replace('_', ' ')}</span>
+                          {d.jenis === 'uang' && d.nominal ? ` — Rp ${d.nominal.toLocaleString('id-ID')}` : ` — ${d.berat_kg} kg`}
+                          {d.is_kelebihan && <span className="ml-1 text-xs text-amber-600">(kelebihan)</span>}
+                        </div>
+                      ))}
+                    </td>
+                    <td className="px-3 py-2 text-center whitespace-nowrap">
+                      <button onClick={() => handleHapus(p.id)} className="text-red-600 hover:underline">Hapus</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -370,16 +374,12 @@ export default function PenerimaanPage() {
                   </div>
 
                   {jiwa > 0 && (
-                    <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
-                      <p className="text-sm font-semibold text-amber-800 mb-2">📋 Kewajiban yang Harus Dibayar:</p>
+                    <div className="bg-amber-50 border border-amber-300 rounded-lg p-3">
+                      <p className="text-sm font-semibold text-amber-800 mb-1">📋 Kewajiban yang Harus Dibayar:</p>
                       {form.jenis === 'uang' ? (
-                        <p className="text-lg font-bold text-amber-900">
-                          Rp {kewajibanUang.toLocaleString('id-ID')}
-                        </p>
+                        <p className="text-lg font-bold text-amber-900">Rp {kewajibanUang.toLocaleString('id-ID')}</p>
                       ) : (
-                        <p className="text-lg font-bold text-amber-900">
-                          {kewajibanBeras} kg
-                        </p>
+                        <p className="text-lg font-bold text-amber-900">{kewajibanBeras} kg</p>
                       )}
                       <p className="text-xs text-amber-700 mt-1">
                         {jiwa} jiwa × {form.jenis === 'uang' ? `Rp ${nishabUang.toLocaleString('id-ID')}` : `${nishabBeras} kg`}
@@ -471,7 +471,7 @@ export default function PenerimaanPage() {
               </div>
 
               {preview && preview.items.length > 0 && (
-                <div className={`border rounded-lg p-4 ${preview.error ? 'bg-red-50 border-red-300' : 'bg-emerald-50 border-emerald-200'}`}>
+                <div className={`border rounded-lg p-3 ${preview.error ? 'bg-red-50 border-red-300' : 'bg-emerald-50 border-emerald-200'}`}>
                   <p className={`text-sm font-semibold mb-2 ${preview.error ? 'text-red-800' : 'text-emerald-800'}`}>
                     {preview.error ? '⚠️ PERHATIAN — Pembayaran Kurang' : '💡 Rincian Otomatis:'}
                   </p>
