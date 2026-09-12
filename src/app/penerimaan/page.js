@@ -69,7 +69,7 @@ export default function PenerimaanPage() {
         setPreview({
           items: [
             { label: '🌾 Zakat Fitrah', nominal: kewajiban },
-            { label: '🎁 Infaq (kelebihan)', nominal: bayar - kewajiban },
+            { label: '🎁 Infaq (kelebihan → Kas Masjid)', nominal: bayar - kewajiban },
           ],
         })
       }
@@ -135,7 +135,11 @@ export default function PenerimaanPage() {
 
     if (errH) return alert('Gagal header: ' + errH.message)
 
+    const muzakki = muzakkiList.find((x) => x.id === form.muzakki_id)
+    const namaMuzakki = muzakki?.nama || 'Muzakki'
+
     const details = []
+    let kelebihanUangUntukKas = 0  // untuk auto-insert ke kas_masjid
 
     if (form.kategori === 'zakat_fitrah' && form.jenis === 'uang') {
       const kewajiban = nishabUang * jiwa
@@ -144,8 +148,10 @@ export default function PenerimaanPage() {
       if (bayar <= kewajiban) {
         details.push({ penerimaan_id: header.id, kategori: 'zakat_fitrah', jenis: 'uang', nominal: bayar })
       } else {
+        const kelebihan = bayar - kewajiban
         details.push({ penerimaan_id: header.id, kategori: 'zakat_fitrah', jenis: 'uang', nominal: kewajiban })
-        details.push({ penerimaan_id: header.id, kategori: 'infaq_shodaqoh', jenis: 'uang', nominal: bayar - kewajiban, is_kelebihan: true })
+        details.push({ penerimaan_id: header.id, kategori: 'infaq_shodaqoh', jenis: 'uang', nominal: kelebihan, is_kelebihan: true })
+        kelebihanUangUntukKas = kelebihan
       }
     } else if (form.kategori === 'zakat_fitrah' && form.jenis === 'beras') {
       const kewajiban = nishabBeras * jiwa
@@ -171,6 +177,7 @@ export default function PenerimaanPage() {
       const nominal = parseInt(form.nominal) || 0
       if (nominal <= 0) return alert('Nominal harus > 0')
       details.push({ penerimaan_id: header.id, kategori: 'infaq_shodaqoh', jenis: 'uang', nominal })
+      kelebihanUangUntukKas = nominal
     }
 
     const { error: errD } = await supabase.from('penerimaan_detail').insert(details)
@@ -180,12 +187,39 @@ export default function PenerimaanPage() {
       return
     }
 
+    // ⭐ AUTO-INSERT KE KAS MASJID kalau ada infaq uang
+    if (kelebihanUangUntukKas > 0) {
+      const { error: errKas } = await supabase.from('kas_masjid').insert({
+        tipe: 'masuk',
+        nominal: kelebihanUangUntukKas,
+        sumber: 'infaq_kelebihan_zakat',
+        keterangan: `Infaq dari ${namaMuzakki} (${kode})`,
+        referensi_id: header.id,
+        tanggal: new Date().toISOString().slice(0, 10),
+      })
+      if (errKas) {
+        console.error('Gagal insert kas_masjid:', errKas)
+        // Tidak batalkan transaksi, cuma log error
+      }
+    }
+
     setShowForm(false)
     fetchData()
     alert('✅ Penerimaan berhasil disimpan!')
   }
 
   async function handleHapus(id) {
+    // Cek dulu apakah ada kas_masjid yang terkait
+    const { data: relatedKas } = await supabase
+      .from('kas_masjid')
+      .select('id')
+      .eq('referensi_id', id)
+
+    // Hapus kas_masjid terkait (kalau ada)
+    if (relatedKas && relatedKas.length > 0) {
+      await supabase.from('kas_masjid').delete().eq('referensi_id', id)
+    }
+
     const { error } = await supabase.from('penerimaan').delete().eq('id', id)
     if (error) alert('Gagal hapus: ' + error.message)
     fetchData()
@@ -223,7 +257,7 @@ export default function PenerimaanPage() {
                 <th className="px-4 py-3 text-center">Aksi</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="text-gray-800">
               {list.map((p) => (
                 <tr key={p.id} className="border-t hover:bg-gray-50 align-top">
                   <td className="px-4 py-3 font-mono text-xs text-gray-600">{p.kode}</td>
@@ -369,6 +403,7 @@ export default function PenerimaanPage() {
                     placeholder="Contoh: 50000"
                     required
                   />
+                  <p className="text-xs text-gray-500 mt-1">✨ Otomatis masuk ke Kas Masjid</p>
                 </div>
               )}
 
