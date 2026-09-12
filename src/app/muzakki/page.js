@@ -86,6 +86,8 @@ export default function MuzakkiPage() {
   const inputClass =
     'w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500'
 
+  const onlyDigits = (v) => v.replace(/\D/g, '')
+
   return (
     <main className="max-w-5xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
@@ -97,7 +99,7 @@ export default function MuzakkiPage() {
         </div>
         <button
           onClick={handleTambah}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition text-sm"
         >
           + Tambah Muzakki
         </button>
@@ -113,43 +115,43 @@ export default function MuzakkiPage() {
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow overflow-hidden">
-          <table className="w-full text-left text-xs md:text-sm">
-            <thead className="bg-gray-100 text-gray-600 text-sm">
-              <tr>
-                <th className="px-4 py-3">Nama</th>
-                <th className="px-4 py-3">Alamat</th>
-                <th className="px-4 py-3">No HP</th>
-                <th className="px-4 py-3 text-center">Jiwa</th>
-                <th className="px-4 py-3 text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((m) => (
-                <tr key={m.id} className="border-t hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-800">{m.nama}</td>
-                  <td className="px-4 py-3 text-gray-600">{m.alamat || '-'}</td>
-                  <td className="px-4 py-3 text-gray-600">{m.no_hp || '-'}</td>
-                  <td className="px-4 py-3 text-center text-gray-800">
-                    {m.jumlah_jiwa}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => handleEdit(m)}
-                      className="text-blue-600 hover:underline mr-3"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleHapus(m.id)}
-                      className="text-red-600 hover:underline"
-                    >
-                      Hapus
-                    </button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs md:text-sm">
+              <thead className="bg-gray-100 text-gray-600">
+                <tr>
+                  <th className="px-3 py-2">Nama</th>
+                  <th className="px-3 py-2">Alamat</th>
+                  <th className="px-3 py-2">No HP</th>
+                  <th className="px-3 py-2 text-center">Jiwa</th>
+                  <th className="px-3 py-2 text-center">Aksi</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="text-gray-800">
+                {list.map((m) => (
+                  <tr key={m.id} className="border-t hover:bg-gray-50">
+                    <td className="px-3 py-2 font-medium text-gray-800">{m.nama}</td>
+                    <td className="px-3 py-2 text-gray-600">{m.alamat || '-'}</td>
+                    <td className="px-3 py-2 text-gray-600">{m.no_hp || '-'}</td>
+                    <td className="px-3 py-2 text-center">{m.jumlah_jiwa}</td>
+                    <td className="px-3 py-2 text-center whitespace-nowrap">
+                      <button
+                        onClick={() => handleEdit(m)}
+                        className="text-blue-600 hover:underline mr-2"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleHapus(m.id)}
+                        className="text-red-600 hover:underline"
+                      >
+                        Hapus
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -205,10 +207,9 @@ export default function MuzakkiPage() {
                   type="text"
                   inputMode="numeric"
                   value={form.jumlah_jiwa}
-                  onChange={(e) => {
-                    const v = e.target.value.replace(/\D/g, '')
-                    setForm({ ...form, jumlah_jiwa: v })
-                  }}
+                  onChange={(e) =>
+                    setForm({ ...form, jumlah_jiwa: onlyDigits(e.target.value) })
+                  }
                   className={inputClass}
                   placeholder="Contoh: 3"
                 />
