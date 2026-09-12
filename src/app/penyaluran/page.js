@@ -296,7 +296,7 @@ export default function PenyaluranPage() {
             <button
               onClick={() => bukaPreview('uang')}
               disabled={proses || uangSiap <= 0 || penerimaUang.length === 0}
-              className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white py-3 rounded-xl font-medium text-lg"
+              className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white py-3 rounded-xl font-medium"
             >
               {proses ? 'Memproses...' : `💵 Salurkan Uang (Rp ${perOrangUang.toLocaleString('id-ID')}/orang)`}
             </button>
@@ -304,7 +304,7 @@ export default function PenyaluranPage() {
             <button
               onClick={() => bukaPreview('beras')}
               disabled={proses || berasSiap <= 0 || penerimaBeras.length === 0}
-              className="bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 text-white py-3 rounded-xl font-medium text-lg"
+              className="bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 text-white py-3 rounded-xl font-medium"
             >
               {proses ? 'Memproses...' : `🍚 Salurkan Beras (${perOrangBeras.toFixed(3)} kg/orang)`}
             </button>
@@ -312,54 +312,56 @@ export default function PenyaluranPage() {
 
           <div className="bg-white rounded-xl shadow overflow-hidden">
             <div className="px-4 py-3 bg-gray-50 border-b">
-              <h2 className="font-semibold text-gray-700">Riwayat Penyaluran</h2>
+              <h2 className="font-semibold text-gray-700 text-sm md:text-base">Riwayat Penyaluran</h2>
             </div>
             {riwayat.length === 0 ? (
               <div className="p-8 text-center text-gray-500 text-sm">
                 Belum ada penyaluran.
               </div>
             ) : (
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 text-gray-600">
-                  <tr>
-                    <th className="px-4 py-2">Kode</th>
-                    <th className="px-4 py-2">Tanggal</th>
-                    <th className="px-4 py-2">Jenis</th>
-                    <th className="px-4 py-2 text-right">Total</th>
-                    <th className="px-4 py-2 text-center">Per Orang</th>
-                    <th className="px-4 py-2 text-center">Penerima</th>
-                    <th className="px-4 py-2 text-center">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="text-gray-800">
-                  {riwayat.map((r) => (
-                    <tr key={r.id} className="border-t hover:bg-gray-50">
-                      <td className="px-4 py-2 font-mono text-xs text-gray-700">{r.kode}</td>
-                      <td className="px-4 py-2 text-gray-700">{r.tanggal}</td>
-                      <td className="px-4 py-2 capitalize text-gray-700">{r.jenis}</td>
-                      <td className="px-4 py-2 text-right font-medium text-gray-800">
-                        {r.jenis === 'uang'
-                          ? `Rp ${(r.total_dibagikan || 0).toLocaleString('id-ID')}`
-                          : `${(r.total_dibagikan || 0).toFixed(3)} kg`}
-                      </td>
-                      <td className="px-4 py-2 text-center text-gray-700">
-                        {r.jenis === 'uang'
-                          ? `Rp ${(r.total_diterima_per_orang || 0).toLocaleString('id-ID')}`
-                          : `${(r.total_diterima_per_orang || 0).toFixed(3)} kg`}
-                      </td>
-                      <td className="px-4 py-2 text-center text-gray-700">{r.jumlah_penerima}</td>
-                      <td className="px-4 py-2 text-center">
-                        <button
-                          onClick={() => hapusPenyaluran(r.id)}
-                          className="text-red-600 hover:underline text-xs"
-                        >
-                          Hapus
-                        </button>
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs md:text-sm">
+                  <thead className="bg-gray-50 text-gray-600">
+                    <tr>
+                      <th className="px-3 py-2">Kode</th>
+                      <th className="px-3 py-2">Tanggal</th>
+                      <th className="px-3 py-2">Jenis</th>
+                      <th className="px-3 py-2 text-right">Total</th>
+                      <th className="px-3 py-2 text-center">Per Orang</th>
+                      <th className="px-3 py-2 text-center">Penerima</th>
+                      <th className="px-3 py-2 text-center">Aksi</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="text-gray-800">
+                    {riwayat.map((r) => (
+                      <tr key={r.id} className="border-t hover:bg-gray-50">
+                        <td className="px-3 py-2 font-mono text-xs text-gray-700">{r.kode}</td>
+                        <td className="px-3 py-2 text-gray-700">{r.tanggal}</td>
+                        <td className="px-3 py-2 capitalize text-gray-700">{r.jenis}</td>
+                        <td className="px-3 py-2 text-right font-medium text-gray-800 whitespace-nowrap">
+                          {r.jenis === 'uang'
+                            ? `Rp ${(r.total_dibagikan || 0).toLocaleString('id-ID')}`
+                            : `${(r.total_dibagikan || 0).toFixed(3)} kg`}
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700 whitespace-nowrap">
+                          {r.jenis === 'uang'
+                            ? `Rp ${(r.total_diterima_per_orang || 0).toLocaleString('id-ID')}`
+                            : `${(r.total_diterima_per_orang || 0).toFixed(3)} kg`}
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-700">{r.jumlah_penerima}</td>
+                        <td className="px-3 py-2 text-center whitespace-nowrap">
+                          <button
+                            onClick={() => hapusPenyaluran(r.id)}
+                            className="text-red-600 hover:underline text-xs"
+                          >
+                            Hapus
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </>
@@ -369,7 +371,7 @@ export default function PenyaluranPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full my-8">
             <div className="px-6 py-4 border-b">
-              <h2 className="text-xl font-bold text-gray-800">
+              <h2 className="text-lg md:text-xl font-bold text-gray-800">
                 {previewJenis === 'uang' ? '💵 Konfirmasi Penyaluran Uang' : '🍚 Konfirmasi Penyaluran Beras'}
               </h2>
               <p className="text-sm text-gray-500">
@@ -378,10 +380,10 @@ export default function PenyaluranPage() {
             </div>
 
             <div className="p-6">
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="bg-emerald-50 rounded-lg p-3">
                   <p className="text-xs text-gray-600 uppercase">Total Dibagikan</p>
-                  <p className="text-lg font-bold text-emerald-700">
+                  <p className="text-base md:text-lg font-bold text-emerald-700">
                     {previewJenis === 'uang'
                       ? `Rp ${(perOrangUang * penerimaUang.length).toLocaleString('id-ID')}`
                       : `${(perOrangBeras * penerimaBeras.length).toFixed(3)} kg`}
@@ -389,7 +391,7 @@ export default function PenyaluranPage() {
                 </div>
                 <div className="bg-blue-50 rounded-lg p-3">
                   <p className="text-xs text-gray-600 uppercase">Per Orang</p>
-                  <p className="text-lg font-bold text-blue-700">
+                  <p className="text-base md:text-lg font-bold text-blue-700">
                     {previewJenis === 'uang'
                       ? `Rp ${perOrangUang.toLocaleString('id-ID')}`
                       : `${perOrangBeras.toFixed(3)} kg`}
@@ -397,15 +399,15 @@ export default function PenyaluranPage() {
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs text-gray-600 uppercase">Jumlah Penerima</p>
-                  <p className="text-lg font-bold text-gray-800">
+                  <p className="text-base md:text-lg font-bold text-gray-800">
                     {previewJenis === 'uang' ? penerimaUang.length : penerimaBeras.length} orang
                   </p>
                 </div>
                 <div className="bg-amber-50 rounded-lg p-3">
                   <p className="text-xs text-gray-600 uppercase">
-                    {previewJenis === 'uang' ? 'Sisa → Kas Masjid' : 'Sisa Pembulatan'}
+                    {previewJenis === 'uang' ? 'Sisa → Kas' : 'Sisa Pembulatan'}
                   </p>
-                  <p className="text-lg font-bold text-amber-700">
+                  <p className="text-base md:text-lg font-bold text-amber-700">
                     {previewJenis === 'uang'
                       ? `Rp ${sisaUang.toLocaleString('id-ID')}`
                       : `${sisaBeras.toFixed(3)} kg`}
@@ -415,25 +417,25 @@ export default function PenyaluranPage() {
 
               <div className="border rounded-lg overflow-hidden">
                 <div className="bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700">
-                  📋 Daftar Penerima ({(previewJenis === 'uang' ? penerimaUang : penerimaBeras).length} orang — yang belum dapat)
+                  📋 Daftar Penerima ({(previewJenis === 'uang' ? penerimaUang : penerimaBeras).length} orang)
                 </div>
-                <div className="max-h-64 overflow-y-auto">
-                  <table className="w-full text-left text-sm">
+                <div className="max-h-64 overflow-y-auto overflow-x-auto">
+                  <table className="w-full text-left text-xs md:text-sm">
                     <thead className="bg-gray-50 text-gray-600 sticky top-0">
                       <tr>
-                        <th className="px-4 py-2 text-center w-12">No</th>
-                        <th className="px-4 py-2">Nama</th>
-                        <th className="px-4 py-2">Asnaf</th>
-                        <th className="px-4 py-2 text-right">Diterima</th>
+                        <th className="px-3 py-2 text-center w-12">No</th>
+                        <th className="px-3 py-2">Nama</th>
+                        <th className="px-3 py-2">Asnaf</th>
+                        <th className="px-3 py-2 text-right">Diterima</th>
                       </tr>
                     </thead>
                     <tbody className="text-gray-700">
                       {(previewJenis === 'uang' ? penerimaUang : penerimaBeras).map((m, i) => (
                         <tr key={m.id} className="border-t hover:bg-gray-50">
-                          <td className="px-4 py-2 text-center text-gray-500">{i + 1}</td>
-                          <td className="px-4 py-2 font-medium text-gray-800">{m.nama}</td>
-                          <td className="px-4 py-2 capitalize text-gray-600">{m.asnaf || '-'}</td>
-                          <td className="px-4 py-2 text-right font-medium text-emerald-700">
+                          <td className="px-3 py-2 text-center text-gray-500">{i + 1}</td>
+                          <td className="px-3 py-2 font-medium text-gray-800">{m.nama}</td>
+                          <td className="px-3 py-2 capitalize text-gray-600">{m.asnaf || '-'}</td>
+                          <td className="px-3 py-2 text-right font-medium text-emerald-700 whitespace-nowrap">
                             {previewJenis === 'uang'
                               ? `Rp ${perOrangUang.toLocaleString('id-ID')}`
                               : `${perOrangBeras.toFixed(3)} kg`}
