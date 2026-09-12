@@ -264,7 +264,7 @@ export default function PenerimaanPage() {
   }
 
   const inputClass =
-    'w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500'
+    'w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500'
 
   const onlyDigits = (v) => v.replace(/\D/g, '')
 
@@ -272,8 +272,8 @@ export default function PenerimaanPage() {
     <main className="max-w-6xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">📥 Penerimaan Zakat</h1>
-          <p className="text-gray-500 text-sm">Riwayat penerimaan ({list.length} transaksi)</p>
+          <h1 className="text-2xl font-bold text-slate-800">📥 Penerimaan Zakat</h1>
+          <p className="text-slate-500 text-sm">Riwayat penerimaan ({list.length} transaksi)</p>
         </div>
         <button
           onClick={handleTambah}
@@ -284,14 +284,14 @@ export default function PenerimaanPage() {
       </div>
 
       {loading ? (
-        <div className="bg-white rounded-xl shadow p-8 text-center text-gray-500">Memuat...</div>
+        <div className="bg-white rounded-xl shadow p-8 text-center text-slate-500">Memuat...</div>
       ) : list.length === 0 ? (
-        <div className="bg-white rounded-xl shadow p-8 text-center text-gray-500">Belum ada transaksi penerimaan.</div>
+        <div className="bg-white rounded-xl shadow p-8 text-center text-slate-500">Belum ada transaksi penerimaan.</div>
       ) : (
         <div className="bg-white rounded-xl shadow overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs md:text-sm">
-              <thead className="bg-gray-100 text-gray-600">
+              <thead className="bg-slate-100 text-slate-700">
                 <tr>
                   <th className="px-3 py-2">Kode</th>
                   <th className="px-3 py-2">Muzakki</th>
@@ -299,14 +299,14 @@ export default function PenerimaanPage() {
                   <th className="px-3 py-2 text-center">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="text-gray-800">
+              <tbody className="text-slate-800">
                 {list.map((p) => (
-                  <tr key={p.id} className="border-t hover:bg-gray-50 align-top">
-                    <td className="px-3 py-2 font-mono text-xs text-gray-600">{p.kode}</td>
-                    <td className="px-3 py-2 font-medium text-gray-800">{p.muzakki?.nama || '-'}</td>
+                  <tr key={p.id} className="border-t hover:bg-slate-50 align-top">
+                    <td className="px-3 py-2 font-mono text-xs text-slate-600">{p.kode}</td>
+                    <td className="px-3 py-2 font-medium text-slate-800">{p.muzakki?.nama || '-'}</td>
                     <td className="px-3 py-2">
                       {(p.detail || []).map((d, i) => (
-                        <div key={i} className="text-gray-700">
+                        <div key={i} className="text-slate-700">
                           <span className="capitalize">{d.kategori.replace('_', ' ')}</span>
                           {d.jenis === 'uang' && d.nominal ? ` — Rp ${d.nominal.toLocaleString('id-ID')}` : ` — ${d.berat_kg} kg`}
                           {d.is_kelebihan && <span className="ml-1 text-xs text-amber-600">(kelebihan)</span>}
@@ -327,10 +327,10 @@ export default function PenerimaanPage() {
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 my-8">
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Input Penerimaan Baru</h2>
+            <h2 className="text-xl font-bold mb-4 text-slate-800">Input Penerimaan Baru</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Muzakki *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Muzakki *</label>
                 <select value={form.muzakki_id} onChange={(e) => handleMuzakkiChange(e.target.value)} className={inputClass} required>
                   <option value="">-- Pilih Muzakki --</option>
                   {muzakkiList.map((m) => (
@@ -340,7 +340,7 @@ export default function PenerimaanPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Kategori *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Kategori *</label>
                 <select value={form.kategori} onChange={(e) => setForm({ ...form, kategori: e.target.value })} className={inputClass}>
                   {KATEGORI.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
                 </select>
@@ -349,7 +349,7 @@ export default function PenerimaanPage() {
               {form.kategori === 'zakat_fitrah' && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Jenis *</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Jenis *</label>
                     <div className="flex gap-4">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input type="radio" checked={form.jenis === 'uang'} onChange={() => setForm({ ...form, jenis: 'uang' })} />
@@ -362,7 +362,7 @@ export default function PenerimaanPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah Jiwa</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Jumlah Jiwa</label>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -389,7 +389,7 @@ export default function PenerimaanPage() {
 
                   {form.jenis === 'uang' ? (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Nominal Dibayar (Rp) *</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Nominal Dibayar (Rp) *</label>
                       <input
                         type="text"
                         inputMode="numeric"
@@ -402,7 +402,7 @@ export default function PenerimaanPage() {
                     </div>
                   ) : (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Berat Dibayar (kg) *</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Berat Dibayar (kg) *</label>
                       <input
                         type="text"
                         inputMode="decimal"
@@ -419,7 +419,7 @@ export default function PenerimaanPage() {
 
               {form.kategori === 'zakat_maal' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Total Harta (Rp) *</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Total Harta (Rp) *</label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -429,13 +429,13 @@ export default function PenerimaanPage() {
                     placeholder="Contoh: 50000000"
                     required
                   />
-                  <p className="text-xs text-gray-500 mt-1">Zakat = 2.5% otomatis</p>
+                  <p className="text-xs text-slate-500 mt-1">Zakat = 2.5% otomatis</p>
                 </div>
               )}
 
               {form.kategori === 'fidyah' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah Hari *</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Jumlah Hari *</label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -445,13 +445,13 @@ export default function PenerimaanPage() {
                     placeholder="Contoh: 7"
                     required
                   />
-                  <p className="text-xs text-gray-500 mt-1">Rp 15.000/hari</p>
+                  <p className="text-xs text-slate-500 mt-1">Rp 15.000/hari</p>
                 </div>
               )}
 
               {form.kategori === 'infaq_shodaqoh' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nominal (Rp) *</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Nominal (Rp) *</label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -461,12 +461,12 @@ export default function PenerimaanPage() {
                     placeholder="Contoh: 50000"
                     required
                   />
-                  <p className="text-xs text-gray-500 mt-1">✨ Otomatis masuk ke Kas Masjid</p>
+                  <p className="text-xs text-slate-500 mt-1">✨ Otomatis masuk ke Kas Masjid</p>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Catatan</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Catatan</label>
                 <input type="text" value={form.catatan} onChange={(e) => setForm({ ...form, catatan: e.target.value })} className={inputClass} />
               </div>
 
@@ -476,7 +476,7 @@ export default function PenerimaanPage() {
                     {preview.error ? '⚠️ PERHATIAN — Pembayaran Kurang' : '💡 Rincian Otomatis:'}
                   </p>
                   {preview.items.map((it, i) => (
-                    <div key={i} className="flex justify-between text-sm text-gray-700">
+                    <div key={i} className="flex justify-between text-sm text-slate-700">
                       <span>{it.label}</span>
                       <span className="font-medium">{it.nominal ? `Rp ${it.nominal.toLocaleString('id-ID')}` : `${it.berat} kg`}</span>
                     </div>
@@ -485,7 +485,7 @@ export default function PenerimaanPage() {
               )}
 
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowForm(false)} className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50">Batal</button>
+                <button type="button" onClick={() => setShowForm(false)} className="flex-1 border border-slate-300 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50">Batal</button>
                 <button type="submit" className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium">Simpan</button>
               </div>
             </form>

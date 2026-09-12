@@ -108,10 +108,10 @@ export default function PenyaluranPage() {
   function bukaPreview(jenis) {
     if (jenis === 'uang' && uangSiap <= 0) return alert('Tidak ada uang siap disalurkan')
     if (jenis === 'uang' && penerimaUang.length === 0)
-      return alert('Semua mustahik sudah dapat uang, atau tidak ada penerima uang. Klik "Reset Giliran" kalau mau ulang.')
+      return alert('Semua mustahik sudah dapat uang. Klik "Reset Giliran" kalau mau ulang.')
     if (jenis === 'beras' && berasSiap <= 0) return alert('Tidak ada beras siap disalurkan')
     if (jenis === 'beras' && penerimaBeras.length === 0)
-      return alert('Semua mustahik sudah dapat beras, atau tidak ada penerima beras. Klik "Reset Giliran" kalau mau ulang.')
+      return alert('Semua mustahik sudah dapat beras. Klik "Reset Giliran" kalau mau ulang.')
     setPreviewJenis(jenis)
     setShowPreview(true)
   }
@@ -130,7 +130,7 @@ export default function PenyaluranPage() {
 
   async function eksekusiUang() {
     const totalDibagikan = perOrangUang * penerimaUang.length
-    const kode = `ZK-OUT-${Date.now()}`
+    const kode = 'ZK-OUT-' + Date.now()
 
     const { data: header, error: errH } = await supabase
       .from('penyaluran')
@@ -180,7 +180,7 @@ export default function PenyaluranPage() {
 
   async function eksekusiBeras() {
     const totalDibagikan = perOrangBeras * penerimaBeras.length
-    const kode = `ZK-OUT-${Date.now()}`
+    const kode = 'ZK-OUT-' + Date.now()
 
     const { data: header, error: errH } = await supabase
       .from('penyaluran')
@@ -239,8 +239,8 @@ export default function PenyaluranPage() {
     <main className="max-w-7xl mx-auto p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">📤 Penyaluran Zakat</h1>
-          <p className="text-gray-500 text-sm">Bagi zakat ke mustahik yang berhak</p>
+          <h1 className="text-2xl font-bold text-slate-800">📤 Penyaluran Zakat</h1>
+          <p className="text-slate-500 text-sm">Bagi zakat ke mustahik yang berhak</p>
         </div>
         <button
           onClick={resetGiliran}
@@ -251,42 +251,42 @@ export default function PenyaluranPage() {
       </div>
 
       {loading ? (
-        <div className="bg-white rounded-xl shadow p-8 text-center text-gray-500">Memuat...</div>
+        <div className="bg-white rounded-xl shadow p-8 text-center text-slate-500">Memuat...</div>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-white rounded-xl shadow p-5">
-              <p className="text-xs text-gray-500 uppercase">💵 Uang Siap Salur</p>
+              <p className="text-xs text-slate-500 uppercase">💵 Uang Siap Salur</p>
               <p className="text-2xl font-bold text-emerald-700 mt-1">
                 Rp {uangSiap.toLocaleString('id-ID')}
               </p>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-slate-500 mt-2">
                 Belum dapat: {penerimaUang.length} / {totalPenerimaUang} orang
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-slate-500">
                 Per orang: Rp {perOrangUang.toLocaleString('id-ID')}
               </p>
             </div>
 
             <div className="bg-white rounded-xl shadow p-5">
-              <p className="text-xs text-gray-500 uppercase">🍚 Beras Siap Salur</p>
+              <p className="text-xs text-slate-500 uppercase">🍚 Beras Siap Salur</p>
               <p className="text-2xl font-bold text-amber-700 mt-1">
                 {berasSiap.toFixed(3)} kg
               </p>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-slate-500 mt-2">
                 Belum dapat: {penerimaBeras.length} / {totalPenerimaBeras} orang
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-slate-500">
                 Per orang: {perOrangBeras.toFixed(3)} kg
               </p>
             </div>
 
             <div className="bg-white rounded-xl shadow p-5">
-              <p className="text-xs text-gray-500 uppercase">🕌 Kas Masjid</p>
+              <p className="text-xs text-slate-500 uppercase">🕌 Kas Masjid</p>
               <p className="text-2xl font-bold text-blue-700 mt-1">
                 Rp {kasMasjid.toLocaleString('id-ID')}
               </p>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-slate-500 mt-2">
                 Dari infaq & sisa pembulatan
               </p>
             </div>
@@ -296,7 +296,7 @@ export default function PenyaluranPage() {
             <button
               onClick={() => bukaPreview('uang')}
               disabled={proses || uangSiap <= 0 || penerimaUang.length === 0}
-              className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white py-3 rounded-xl font-medium"
+              className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white py-3 rounded-xl font-medium"
             >
               {proses ? 'Memproses...' : `💵 Salurkan Uang (Rp ${perOrangUang.toLocaleString('id-ID')}/orang)`}
             </button>
@@ -304,24 +304,24 @@ export default function PenyaluranPage() {
             <button
               onClick={() => bukaPreview('beras')}
               disabled={proses || berasSiap <= 0 || penerimaBeras.length === 0}
-              className="bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 text-white py-3 rounded-xl font-medium"
+              className="bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white py-3 rounded-xl font-medium"
             >
               {proses ? 'Memproses...' : `🍚 Salurkan Beras (${perOrangBeras.toFixed(3)} kg/orang)`}
             </button>
           </div>
 
           <div className="bg-white rounded-xl shadow overflow-hidden">
-            <div className="px-4 py-3 bg-gray-50 border-b">
-              <h2 className="font-semibold text-gray-700 text-sm md:text-base">Riwayat Penyaluran</h2>
+            <div className="px-4 py-3 bg-slate-50 border-b">
+              <h2 className="font-semibold text-slate-700 text-sm md:text-base">Riwayat Penyaluran</h2>
             </div>
             {riwayat.length === 0 ? (
-              <div className="p-8 text-center text-gray-500 text-sm">
+              <div className="p-8 text-center text-slate-500 text-sm">
                 Belum ada penyaluran.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs md:text-sm">
-                  <thead className="bg-gray-50 text-gray-600">
+                  <thead className="bg-slate-50 text-slate-600">
                     <tr>
                       <th className="px-3 py-2">Kode</th>
                       <th className="px-3 py-2">Tanggal</th>
@@ -332,23 +332,23 @@ export default function PenyaluranPage() {
                       <th className="px-3 py-2 text-center">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody className="text-gray-800">
+                  <tbody className="text-slate-800">
                     {riwayat.map((r) => (
-                      <tr key={r.id} className="border-t hover:bg-gray-50">
-                        <td className="px-3 py-2 font-mono text-xs text-gray-700">{r.kode}</td>
-                        <td className="px-3 py-2 text-gray-700">{r.tanggal}</td>
-                        <td className="px-3 py-2 capitalize text-gray-700">{r.jenis}</td>
-                        <td className="px-3 py-2 text-right font-medium text-gray-800 whitespace-nowrap">
+                      <tr key={r.id} className="border-t hover:bg-slate-50">
+                        <td className="px-3 py-2 font-mono text-xs text-slate-700">{r.kode}</td>
+                        <td className="px-3 py-2 text-slate-700">{r.tanggal}</td>
+                        <td className="px-3 py-2 capitalize text-slate-700">{r.jenis}</td>
+                        <td className="px-3 py-2 text-right font-medium text-slate-800 whitespace-nowrap">
                           {r.jenis === 'uang'
                             ? `Rp ${(r.total_dibagikan || 0).toLocaleString('id-ID')}`
                             : `${(r.total_dibagikan || 0).toFixed(3)} kg`}
                         </td>
-                        <td className="px-3 py-2 text-center text-gray-700 whitespace-nowrap">
+                        <td className="px-3 py-2 text-center text-slate-700 whitespace-nowrap">
                           {r.jenis === 'uang'
                             ? `Rp ${(r.total_diterima_per_orang || 0).toLocaleString('id-ID')}`
                             : `${(r.total_diterima_per_orang || 0).toFixed(3)} kg`}
                         </td>
-                        <td className="px-3 py-2 text-center text-gray-700">{r.jumlah_penerima}</td>
+                        <td className="px-3 py-2 text-center text-slate-700">{r.jumlah_penerima}</td>
                         <td className="px-3 py-2 text-center whitespace-nowrap">
                           <button
                             onClick={() => hapusPenyaluran(r.id)}
@@ -371,10 +371,10 @@ export default function PenyaluranPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full my-8">
             <div className="px-6 py-4 border-b">
-              <h2 className="text-lg md:text-xl font-bold text-gray-800">
+              <h2 className="text-lg md:text-xl font-bold text-slate-800">
                 {previewJenis === 'uang' ? '💵 Konfirmasi Penyaluran Uang' : '🍚 Konfirmasi Penyaluran Beras'}
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-slate-500">
                 Periksa daftar penerima sebelum eksekusi
               </p>
             </div>
@@ -382,7 +382,7 @@ export default function PenyaluranPage() {
             <div className="p-6">
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="bg-emerald-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-600 uppercase">Total Dibagikan</p>
+                  <p className="text-xs text-slate-600 uppercase">Total Dibagikan</p>
                   <p className="text-base md:text-lg font-bold text-emerald-700">
                     {previewJenis === 'uang'
                       ? `Rp ${(perOrangUang * penerimaUang.length).toLocaleString('id-ID')}`
@@ -390,21 +390,21 @@ export default function PenyaluranPage() {
                   </p>
                 </div>
                 <div className="bg-blue-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-600 uppercase">Per Orang</p>
+                  <p className="text-xs text-slate-600 uppercase">Per Orang</p>
                   <p className="text-base md:text-lg font-bold text-blue-700">
                     {previewJenis === 'uang'
                       ? `Rp ${perOrangUang.toLocaleString('id-ID')}`
                       : `${perOrangBeras.toFixed(3)} kg`}
                   </p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-600 uppercase">Jumlah Penerima</p>
-                  <p className="text-base md:text-lg font-bold text-gray-800">
+                <div className="bg-slate-50 rounded-lg p-3">
+                  <p className="text-xs text-slate-600 uppercase">Jumlah Penerima</p>
+                  <p className="text-base md:text-lg font-bold text-slate-800">
                     {previewJenis === 'uang' ? penerimaUang.length : penerimaBeras.length} orang
                   </p>
                 </div>
                 <div className="bg-amber-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-600 uppercase">
+                  <p className="text-xs text-slate-600 uppercase">
                     {previewJenis === 'uang' ? 'Sisa → Kas' : 'Sisa Pembulatan'}
                   </p>
                   <p className="text-base md:text-lg font-bold text-amber-700">
@@ -416,12 +416,12 @@ export default function PenyaluranPage() {
               </div>
 
               <div className="border rounded-lg overflow-hidden">
-                <div className="bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700">
+                <div className="bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
                   📋 Daftar Penerima ({(previewJenis === 'uang' ? penerimaUang : penerimaBeras).length} orang)
                 </div>
                 <div className="max-h-64 overflow-y-auto overflow-x-auto">
                   <table className="w-full text-left text-xs md:text-sm">
-                    <thead className="bg-gray-50 text-gray-600 sticky top-0">
+                    <thead className="bg-slate-50 text-slate-600 sticky top-0">
                       <tr>
                         <th className="px-3 py-2 text-center w-12">No</th>
                         <th className="px-3 py-2">Nama</th>
@@ -429,12 +429,12 @@ export default function PenyaluranPage() {
                         <th className="px-3 py-2 text-right">Diterima</th>
                       </tr>
                     </thead>
-                    <tbody className="text-gray-700">
+                    <tbody className="text-slate-700">
                       {(previewJenis === 'uang' ? penerimaUang : penerimaBeras).map((m, i) => (
-                        <tr key={m.id} className="border-t hover:bg-gray-50">
-                          <td className="px-3 py-2 text-center text-gray-500">{i + 1}</td>
-                          <td className="px-3 py-2 font-medium text-gray-800">{m.nama}</td>
-                          <td className="px-3 py-2 capitalize text-gray-600">{m.asnaf || '-'}</td>
+                        <tr key={m.id} className="border-t hover:bg-slate-50">
+                          <td className="px-3 py-2 text-center text-slate-500">{i + 1}</td>
+                          <td className="px-3 py-2 font-medium text-slate-800">{m.nama}</td>
+                          <td className="px-3 py-2 capitalize text-slate-600">{m.asnaf || '-'}</td>
                           <td className="px-3 py-2 text-right font-medium text-emerald-700 whitespace-nowrap">
                             {previewJenis === 'uang'
                               ? `Rp ${perOrangUang.toLocaleString('id-ID')}`
@@ -452,14 +452,14 @@ export default function PenyaluranPage() {
                   type="button"
                   onClick={() => setShowPreview(false)}
                   disabled={proses}
-                  className="flex-1 border border-gray-300 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-50 font-medium"
+                  className="flex-1 border border-slate-300 text-slate-700 px-4 py-3 rounded-lg hover:bg-slate-50 font-medium"
                 >
                   Batal
                 </button>
                 <button
                   onClick={eksekusiPenyaluran}
                   disabled={proses}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white px-4 py-3 rounded-lg font-medium"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white px-4 py-3 rounded-lg font-medium"
                 >
                   {proses ? 'Memproses...' : '✅ Salurkan Sekarang'}
                 </button>

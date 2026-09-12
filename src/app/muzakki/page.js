@@ -87,16 +87,16 @@ export default function MuzakkiPage() {
   }
 
   const inputClass =
-    'w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500'
+    'w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500'
 
   const onlyDigits = (v) => v.replace(/\D/g, '')
 
   return (
-    <main className="max-w-5xl mx-auto p-6 min-h-screen bg-orange-50">
+    <main className="max-w-5xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">👥 Data Muzakki</h1>
-          <p className="text-gray-500 text-sm">
+          <h1 className="text-2xl font-bold text-slate-800">👥 Data Muzakki</h1>
+          <p className="text-slate-500 text-sm">
             Daftar pemberi zakat ({list.length} orang)
           </p>
         </div>
@@ -109,18 +109,18 @@ export default function MuzakkiPage() {
       </div>
 
       {loading ? (
-        <div className="bg-white rounded-xl shadow p-8 text-center text-gray-500">
+        <div className="bg-white rounded-xl shadow p-8 text-center text-slate-500">
           Memuat data...
         </div>
       ) : list.length === 0 ? (
-        <div className="bg-white rounded-xl shadow p-8 text-center text-gray-500">
+        <div className="bg-white rounded-xl shadow p-8 text-center text-slate-500">
           Belum ada data muzakki. Klik "+ Tambah Muzakki" untuk mulai.
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs md:text-sm">
-              <thead className="bg-orange-100 text-orange-900">
+              <thead className="bg-slate-100 text-slate-700">
                 <tr>
                   <th className="px-3 py-2">Nama</th>
                   <th className="px-3 py-2">Alamat</th>
@@ -130,17 +130,17 @@ export default function MuzakkiPage() {
                   <th className="px-3 py-2 text-center">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="text-gray-800">
+              <tbody className="text-slate-800">
                 {list.map((m) => (
-                  <tr key={m.id} className="border-t hover:bg-orange-50">
-                    <td className="px-3 py-2 font-medium text-gray-800">{m.nama}</td>
-                    <td className="px-3 py-2 text-gray-600">{m.alamat || '-'}</td>
+                  <tr key={m.id} className="border-t hover:bg-slate-50">
+                    <td className="px-3 py-2 font-medium text-slate-800">{m.nama}</td>
+                    <td className="px-3 py-2 text-slate-600">{m.alamat || '-'}</td>
                     <td className="px-3 py-2 text-center">
-                      <span className="inline-block px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs font-medium">
+                      <span className="inline-block px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-medium">
                         {m.rt || '-'}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-gray-600">{m.no_hp || '-'}</td>
+                    <td className="px-3 py-2 text-slate-600">{m.no_hp || '-'}</td>
                     <td className="px-3 py-2 text-center">{m.jumlah_jiwa}</td>
                     <td className="px-3 py-2 text-center whitespace-nowrap">
                       <button
@@ -167,12 +167,12 @@ export default function MuzakkiPage() {
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 my-8">
-            <h2 className="text-xl font-bold mb-4 text-gray-800">
+            <h2 className="text-xl font-bold mb-4 text-slate-800">
               {editing ? 'Edit Muzakki' : 'Tambah Muzakki'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Nama *
                 </label>
                 <input
@@ -186,7 +186,7 @@ export default function MuzakkiPage() {
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
                     Alamat
                   </label>
                   <input
@@ -198,7 +198,7 @@ export default function MuzakkiPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
                     RT
                   </label>
                   <input
@@ -211,7 +211,7 @@ export default function MuzakkiPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   No HP
                 </label>
                 <input
@@ -223,7 +223,7 @@ export default function MuzakkiPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Jumlah Jiwa
                 </label>
                 <input
@@ -241,7 +241,7 @@ export default function MuzakkiPage() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50"
+                  className="flex-1 border border-slate-300 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50"
                 >
                   Batal
                 </button>
