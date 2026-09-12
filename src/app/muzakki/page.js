@@ -16,6 +16,12 @@ export default function MuzakkiPage() {
     jumlah_jiwa: '',
   })
 
+  // Modal riwayat jiwa
+  const [showJiwa, setShowJiwa] = useState(false)
+  const [jiwaMuzakki, setJiwaMuzakki] = useState(null)
+  const [jiwaData, setJiwaData] = useState([])
+  const [jiwaLoading, setJiwaLoading] = useState(false)
+
   async function fetchData() {
     setLoading(true)
     const { data, error } = await supabase
@@ -34,6 +40,43 @@ export default function MuzakkiPage() {
   useEffect(() => {
     fetchData()
   }, [])
+
+  // Buka modal riwayat jiwa
+  async function bukaJiwa(muzakki) {
+    setJiwaMuzakki(muzakki)
+    setShowJiwa(true)
+    setJiwaLoading(true)
+
+    // Ambil semua penerimaan untuk muzakki ini
+    const { data: penerimaanList } = await supabase
+      .from('penerimaan')
+      .select('id, kode, tanggal, created_at')
+      .eq('muzakki_id', muzakki.id)
+      .order('created_at', { ascending: false })
+
+    if (!penerimaanList || penerimaanList.length === 0) {
+      setJiwaData([])
+      setJiwaLoading(false)
+      return
+    }
+
+    // Ambil semua jiwa untuk penerimaan-penerimaan itu
+    const ids = penerimaanList.map((p) => p.id)
+    const { data: jiwaList } = await supabase
+      .from('penerimaan_jiwa')
+      .select('*')
+      .in('penerimaan_id', ids)
+      .order('urutan')
+
+    // Gabungkan
+    const grouped = penerimaanList.map((p) => ({
+      ...p,
+      jiwa: (jiwaList || []).filter((j) => j.penerimaan_id === p.id),
+    }))
+
+    setJiwaData(grouped)
+    setJiwaLoading(false)
+  }
 
   function handleTambah() {
     setEditing(null)
@@ -81,6 +124,7 @@ export default function MuzakkiPage() {
   }
 
   async function handleHapus(id) {
+    if (!confirm('Yakin hapus muzakki ini?')) return
     const { error } = await supabase.from('muzakki').delete().eq('id', id)
     if (error) alert('Gagal hapus: ' + error.message)
     fetchData()
@@ -144,6 +188,13 @@ export default function MuzakkiPage() {
                     <td className="px-3 py-2 text-center">{m.jumlah_jiwa}</td>
                     <td className="px-3 py-2 text-center whitespace-nowrap">
                       <button
+                        onClick={() => bukaJiwa(m)}
+                        className="text-emerald-600 hover:underline mr-2"
+                        title="Lihat riwayat jiwa"
+                      >
+                        👨‍👩‍👧 Jiwa
+                      </button>
+                      <button
                         onClick={() => handleEdit(m)}
                         className="text-blue-600 hover:underline mr-2"
                       >
@@ -164,6 +215,7 @@ export default function MuzakkiPage() {
         </div>
       )}
 
+      {/* Modal Form Tambah/Edit */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 my-8">
@@ -253,6 +305,82 @@ export default function MuzakkiPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Riwayat Jiwa */}
+      {showJiwa && jiwaMuzakki && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full my-8">
+            <div className="px-6 py-4 border-b sticky top-0 bg-white rounded-t-2xl">
+              <h2 className="text-lg md:text-xl font-bold text-slate-800">
+                👨‍👩‍👧 Riwayat Jiwa: {jiwaMuzakki.nama}
+              </h2>
+              <p className="text-sm text-slate-500">
+                📍 {jiwaMuzakki.alamat || '-'} | RT {jiwaMuzakki.rt || '-'}
+              </p>
+            </div>
+
+            <div className="p-6 max-h-[60vh] overflow-y-auto">
+              {jiwaLoading ? (
+                <div className="text-center text-slate-500 py-8">Memuat riwayat...</div>
+              ) : jiwaData.length === 0 ? (
+                <div className="text-center text-slate-500 py-8">
+                  <p className="text-2xl mb-2">📭</p>
+                  <p>Belum ada riwayat penerimaan untuk muzakki ini.</p>
+                  <p className="text-xs mt-2">Riwayat akan muncul setelah ada transaksi penerimaan.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {jiwaData.map((transaksi, idx) => (
+                    <div key={transaksi.id} className="border rounded-lg overflow-hidden">
+                      <div className="bg-slate-100 px-4 py-2">
+                        <p className="font-semibold text-slate-800 text-sm">
+                          📅 Transaksi {jiwaData.length - idx}: {transaksi.kode}
+                        </p>
+                        <p className="text-xs text-slate-600">Tanggal: {transaksi.tanggal}</p>
+                      </div>
+                      <div className="divide-y">
+                        {transaksi.jiwa.length === 0 ? (
+                          <div className="p-3 text-center text-xs text-slate-400">
+                            (Data nama jiwa tidak tersimpan untuk transaksi ini)
+                          </div>
+                        ) : (
+                          transaksi.jiwa.map((j, i) => (
+                            <div
+                              key={j.id}
+                              className="px-4 py-2 flex items-center justify-between"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs font-bold text-slate-500 w-6">
+                                  {i + 1}.
+                                </span>
+                                <span className="text-sm font-medium text-slate-800">
+                                  {j.nama}
+                                </span>
+                              </div>
+                              <span className="text-xs text-slate-500">
+                                {j.is_kepala_keluarga ? '👤 Kepala Keluarga' : '👥 Anggota'}
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 border-t">
+              <button
+                onClick={() => setShowJiwa(false)}
+                className="w-full bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}
