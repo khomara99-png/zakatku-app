@@ -109,9 +109,9 @@ export default function KasMasjidPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow p-6 text-white">
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow p-5 text-white">
               <p className="text-xs uppercase opacity-80">💰 Saldo Kas Masjid</p>
-              <p className="text-3xl font-bold mt-2">
+              <p className="text-2xl md:text-3xl font-bold mt-2">
                 Rp {saldo.toLocaleString('id-ID')}
               </p>
               <p className="text-xs opacity-70 mt-2">Total dana tersedia</p>
@@ -119,7 +119,7 @@ export default function KasMasjidPage() {
 
             <div className="bg-white rounded-xl shadow p-5">
               <p className="text-xs text-gray-500 uppercase">Total Masuk</p>
-              <p className="text-2xl font-bold text-emerald-700 mt-1">
+              <p className="text-xl md:text-2xl font-bold text-emerald-700 mt-1">
                 Rp {totalMasuk.toLocaleString('id-ID')}
               </p>
               <p className="text-xs text-gray-500 mt-2">
@@ -129,7 +129,7 @@ export default function KasMasjidPage() {
 
             <div className="bg-white rounded-xl shadow p-5">
               <p className="text-xs text-gray-500 uppercase">Total Keluar</p>
-              <p className="text-2xl font-bold text-red-600 mt-1">
+              <p className="text-xl md:text-2xl font-bold text-red-600 mt-1">
                 Rp {totalKeluar.toLocaleString('id-ID')}
               </p>
               <p className="text-xs text-gray-500 mt-2">
@@ -141,13 +141,13 @@ export default function KasMasjidPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <button
               onClick={() => bukaForm('masuk')}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-medium text-lg"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-medium"
             >
               📥 Catat Pemasukan
             </button>
             <button
               onClick={() => bukaForm('keluar')}
-              className="bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-medium text-lg"
+              className="bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-medium"
             >
               📤 Catat Pengeluaran
             </button>
@@ -155,7 +155,7 @@ export default function KasMasjidPage() {
 
           <div className="bg-white rounded-xl shadow overflow-hidden">
             <div className="px-4 py-3 bg-gray-50 border-b">
-              <h2 className="font-semibold text-gray-700">
+              <h2 className="font-semibold text-gray-700 text-sm md:text-base">
                 📋 Riwayat Kas ({list.length} transaksi)
               </h2>
             </div>
@@ -166,24 +166,26 @@ export default function KasMasjidPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
+                <table className="w-full text-left text-xs md:text-sm">
                   <thead className="bg-gray-50 text-gray-600">
                     <tr>
-                      <th className="px-4 py-2">Tanggal</th>
-                      <th className="px-4 py-2 text-center">Tipe</th>
-                      <th className="px-4 py-2">Sumber</th>
-                      <th className="px-4 py-2">Keterangan</th>
-                      <th className="px-4 py-2 text-right">Nominal</th>
-                      <th className="px-4 py-2 text-center">Aksi</th>
+                      <th className="px-3 py-2">Tanggal</th>
+                      <th className="px-3 py-2 text-center">Tipe</th>
+                      <th className="px-3 py-2">Sumber</th>
+                      <th className="px-3 py-2">Keterangan</th>
+                      <th className="px-3 py-2 text-right">Nominal</th>
+                      <th className="px-3 py-2 text-center">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="text-gray-800">
                     {list.map((x) => (
                       <tr key={x.id} className="border-t hover:bg-gray-50">
-                        <td className="px-4 py-2 text-gray-700">{x.tanggal}</td>
-                        <td className="px-4 py-2 text-center">
+                        <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
+                          {x.tanggal}
+                        </td>
+                        <td className="px-3 py-2 text-center">
                           <span
-                            className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                            className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
                               x.tipe === 'masuk'
                                 ? 'bg-emerald-100 text-emerald-700'
                                 : 'bg-red-100 text-red-700'
@@ -192,21 +194,21 @@ export default function KasMasjidPage() {
                             {x.tipe === 'masuk' ? '↓ Masuk' : '↑ Keluar'}
                           </span>
                         </td>
-                        <td className="px-4 py-2 text-gray-600 text-xs">
+                        <td className="px-3 py-2 text-gray-600 text-xs">
                           {x.sumber || '-'}
                         </td>
-                        <td className="px-4 py-2 text-gray-700">
+                        <td className="px-3 py-2 text-gray-700">
                           {x.keterangan || '-'}
                         </td>
                         <td
-                          className={`px-4 py-2 text-right font-medium ${
+                          className={`px-3 py-2 text-right font-medium whitespace-nowrap ${
                             x.tipe === 'masuk' ? 'text-emerald-700' : 'text-red-600'
                           }`}
                         >
                           {x.tipe === 'masuk' ? '+' : '-'} Rp{' '}
                           {Number(x.nominal || 0).toLocaleString('id-ID')}
                         </td>
-                        <td className="px-4 py-2 text-center">
+                        <td className="px-3 py-2 text-center whitespace-nowrap">
                           <button
                             onClick={() => hapus(x.id)}
                             className="text-red-600 hover:underline text-xs"
