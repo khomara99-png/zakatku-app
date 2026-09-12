@@ -52,45 +52,65 @@ export default function PenerimaanPage() {
     fetchData()
   }, [])
 
+  // Hitung kewajiban
+  const nishabUang = pengaturan.nishab_fitrah_uang || 45000
+  const nishabBeras = pengaturan.nishab_fitrah_beras || 2.5
+  const jiwa = parseInt(form.jumlah_jiwa) || 0
+
+  const kewajibanUang = form.kategori === 'zakat_fitrah' ? nishabUang * jiwa : 0
+  const kewajibanBeras = form.kategori === 'zakat_fitrah' ? nishabBeras * jiwa : 0
+
   useEffect(() => {
     if (!form.muzakki_id) return setPreview(null)
 
-    const nishabUang = pengaturan.nishab_fitrah_uang || 45000
-    const nishabBeras = pengaturan.nishab_fitrah_beras || 2.5
-    const jiwa = parseInt(form.jumlah_jiwa) || 0
-
     if (form.kategori === 'zakat_fitrah' && form.jenis === 'uang') {
-      const kewajiban = nishabUang * jiwa
       const bayar = parseInt(form.nominal) || 0
       if (bayar <= 0) return setPreview(null)
-      if (bayar <= kewajiban) {
-        setPreview({ items: [{ label: '🌾 Zakat Fitrah', nominal: bayar }] })
+      if (bayar < kewajibanUang) {
+        setPreview({
+          items: [
+            { label: '⚠️ KEWAJIBAN', nominal: kewajibanUang },
+            { label: '❌ DIBAYAR (KURANG)', nominal: bayar },
+            { label: '🔴 Selisih Kurang', nominal: kewajibanUang - bayar },
+          ],
+          error: true,
+        })
+      } else if (bayar === kewajibanUang) {
+        setPreview({ items: [{ label: '✅ Zakat Fitrah (PAS)', nominal: kewajibanUang }] })
       } else {
         setPreview({
           items: [
-            { label: '🌾 Zakat Fitrah', nominal: kewajiban },
-            { label: '🎁 Infaq (kelebihan → Kas Masjid)', nominal: bayar - kewajiban },
+            { label: '🌾 Zakat Fitrah', nominal: kewajibanUang },
+            { label: '🎁 Infaq (kelebihan → Kas Masjid)', nominal: bayar - kewajibanUang },
           ],
         })
       }
     } else if (form.kategori === 'zakat_fitrah' && form.jenis === 'beras') {
-      const kewajiban = nishabBeras * jiwa
       const bayar = parseFloat(form.berat_kg) || 0
       if (bayar <= 0) return setPreview(null)
-      if (bayar <= kewajiban) {
-        setPreview({ items: [{ label: '🌾 Zakat Fitrah', berat: bayar }] })
+      if (bayar < kewajibanBeras) {
+        setPreview({
+          items: [
+            { label: '⚠️ KEWAJIBAN', berat: kewajibanBeras },
+            { label: '❌ DIBAYAR (KURANG)', berat: bayar },
+            { label: '🔴 Selisih Kurang', berat: kewajibanBeras - bayar },
+          ],
+          error: true,
+        })
+      } else if (bayar === kewajibanBeras) {
+        setPreview({ items: [{ label: '✅ Zakat Fitrah (PAS)', berat: kewajibanBeras }] })
       } else {
         setPreview({
           items: [
-            { label: '🌾 Zakat Fitrah', berat: kewajiban },
-            { label: '🎁 Infaq Beras', berat: bayar - kewajiban },
+            { label: '🌾 Zakat Fitrah', berat: kewajibanBeras },
+            { label: '🎁 Infaq Beras', berat: bayar - kewajibanBeras },
           ],
         })
       }
     } else {
       setPreview(null)
     }
-  }, [form, pengaturan])
+  }, [form, kewajibanUang, kewajibanBeras])
 
   function handleTambah() {
     setForm({
@@ -115,9 +135,37 @@ export default function PenerimaanPage() {
     e.preventDefault()
     if (!form.muzakki_id) return alert('Pilih muzakki dulu')
 
-    const nishabUang = pengaturan.nishab_fitrah_uang || 45000
-    const nishabBeras = pengaturan.nishab_fitrah_beras || 2.5
-    const jiwa = parseInt(form.jumlah_jiwa) || 1
+    const jiwaSubmit = parseInt(form.jumlah_jiwa) || 1
+
+    if (form.kategori === 'zakat_fitrah' && form.jenis === 'uang') {
+      const kewajiban = nishabUang * jiwaSubmit
+      const bayar = parseInt(form.nominal) || 0
+      if (bayar <= 0) return alert('Nominal harus > 0')
+      if (bayar < kewajiban) {
+        return alert(
+          `❌ PEMBAYARAN KURANG!\n\n` +
+          `Kewajiban: Rp ${kewajiban.toLocaleString('id-ID')}\n` +
+          `Dibayar: Rp ${bayar.toLocaleString('id-ID')}\n` +
+          `Kurang: Rp ${(kewajiban - bayar).toLocaleString('id-ID')}\n\n` +
+          `Silakan periksa kembali nominal.`
+        )
+      }
+    }
+
+    if (form.kategori === 'zakat_fitrah' && form.jenis === 'beras') {
+      const kewajiban = nishabBeras * jiwaSubmit
+      const bayar = parseFloat(form.berat_kg) || 0
+      if (bayar <= 0) return alert('Berat harus > 0')
+      if (bayar < kewajiban) {
+        return alert(
+          `❌ PEMBAYARAN KURANG!\n\n` +
+          `Kewajiban: ${kewajiban} kg\n` +
+          `Dibayar: ${bayar} kg\n` +
+          `Kurang: ${(kewajiban - bayar).toFixed(2)} kg\n\n` +
+          `Silakan periksa kembali berat.`
+        )
+      }
+    }
 
     const tanggal = new Date().toISOString().slice(0, 10).replace(/-/g, '')
     const rand = Math.floor(Math.random() * 9000) + 1000
@@ -142,9 +190,8 @@ export default function PenerimaanPage() {
     let kelebihanUangUntukKas = 0
 
     if (form.kategori === 'zakat_fitrah' && form.jenis === 'uang') {
-      const kewajiban = nishabUang * jiwa
+      const kewajiban = nishabUang * jiwaSubmit
       const bayar = parseInt(form.nominal) || 0
-      if (bayar <= 0) return alert('Nominal harus > 0')
       if (bayar <= kewajiban) {
         details.push({ penerimaan_id: header.id, kategori: 'zakat_fitrah', jenis: 'uang', nominal: bayar })
       } else {
@@ -154,9 +201,8 @@ export default function PenerimaanPage() {
         kelebihanUangUntukKas = kelebihan
       }
     } else if (form.kategori === 'zakat_fitrah' && form.jenis === 'beras') {
-      const kewajiban = nishabBeras * jiwa
+      const kewajiban = nishabBeras * jiwaSubmit
       const bayar = parseFloat(form.berat_kg) || 0
-      if (bayar <= 0) return alert('Berat harus > 0')
       if (bayar <= kewajiban) {
         details.push({ penerimaan_id: header.id, kategori: 'zakat_fitrah', jenis: 'beras', berat_kg: bayar })
       } else {
@@ -170,7 +216,7 @@ export default function PenerimaanPage() {
       if (zakat <= 0) return alert('Total harta harus > 0')
       details.push({ penerimaan_id: header.id, kategori: 'zakat_maal', jenis: 'uang', nominal: zakat })
     } else if (form.kategori === 'fidyah') {
-      const hari = jiwa
+      const hari = jiwaSubmit
       const nilaiPerHari = pengaturan.nilai_fidyah_uang || 15000
       details.push({ penerimaan_id: header.id, kategori: 'fidyah', jenis: 'uang', nominal: hari * nilaiPerHari })
     } else if (form.kategori === 'infaq_shodaqoh') {
@@ -188,7 +234,7 @@ export default function PenerimaanPage() {
     }
 
     if (kelebihanUangUntukKas > 0) {
-      const { error: errKas } = await supabase.from('kas_masjid').insert({
+      await supabase.from('kas_masjid').insert({
         tipe: 'masuk',
         nominal: kelebihanUangUntukKas,
         sumber: 'infaq_kelebihan_zakat',
@@ -196,9 +242,6 @@ export default function PenerimaanPage() {
         referensi_id: header.id,
         tanggal: new Date().toISOString().slice(0, 10),
       })
-      if (errKas) {
-        console.error('Gagal insert kas_masjid:', errKas)
-      }
     }
 
     setShowForm(false)
@@ -325,9 +368,28 @@ export default function PenerimaanPage() {
                       placeholder="Contoh: 3"
                     />
                   </div>
+
+                  {jiwa > 0 && (
+                    <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
+                      <p className="text-sm font-semibold text-amber-800 mb-2">📋 Kewajiban yang Harus Dibayar:</p>
+                      {form.jenis === 'uang' ? (
+                        <p className="text-lg font-bold text-amber-900">
+                          Rp {kewajibanUang.toLocaleString('id-ID')}
+                        </p>
+                      ) : (
+                        <p className="text-lg font-bold text-amber-900">
+                          {kewajibanBeras} kg
+                        </p>
+                      )}
+                      <p className="text-xs text-amber-700 mt-1">
+                        {jiwa} jiwa × {form.jenis === 'uang' ? `Rp ${nishabUang.toLocaleString('id-ID')}` : `${nishabBeras} kg`}
+                      </p>
+                    </div>
+                  )}
+
                   {form.jenis === 'uang' ? (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Nominal (Rp) *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nominal Dibayar (Rp) *</label>
                       <input
                         type="text"
                         inputMode="numeric"
@@ -340,7 +402,7 @@ export default function PenerimaanPage() {
                     </div>
                   ) : (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Berat (kg) *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Berat Dibayar (kg) *</label>
                       <input
                         type="text"
                         inputMode="decimal"
@@ -409,8 +471,10 @@ export default function PenerimaanPage() {
               </div>
 
               {preview && preview.items.length > 0 && (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-                  <p className="text-sm font-semibold text-emerald-800 mb-2">💡 Rincian Otomatis:</p>
+                <div className={`border rounded-lg p-4 ${preview.error ? 'bg-red-50 border-red-300' : 'bg-emerald-50 border-emerald-200'}`}>
+                  <p className={`text-sm font-semibold mb-2 ${preview.error ? 'text-red-800' : 'text-emerald-800'}`}>
+                    {preview.error ? '⚠️ PERHATIAN — Pembayaran Kurang' : '💡 Rincian Otomatis:'}
+                  </p>
                   {preview.items.map((it, i) => (
                     <div key={i} className="flex justify-between text-sm text-gray-700">
                       <span>{it.label}</span>
