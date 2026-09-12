@@ -9,6 +9,7 @@ const menu = [
   { href: '/penerimaan', label: '📥 Penerimaan' },
   { href: '/mustahik', label: '🤲 Mustahik' },
   { href: '/penyaluran', label: '📤 Penyaluran' },
+  { href: '/kas-masjid', label: '🕌 Kas Masjid' },
 ]
 
 export default function Navbar() {
