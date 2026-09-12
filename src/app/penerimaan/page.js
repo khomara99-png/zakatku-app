@@ -25,6 +25,7 @@ export default function PenerimaanPage() {
     berat_kg: '',
     catatan: '',
   })
+  const [jiwaList, setJiwaList] = useState([])
   const [preview, setPreview] = useState(null)
 
   async function fetchData() {
@@ -58,6 +59,34 @@ export default function PenerimaanPage() {
 
   const kewajibanUang = form.kategori === 'zakat_fitrah' ? nishabUang * jiwa : 0
   const kewajibanBeras = form.kategori === 'zakat_fitrah' ? nishabBeras * jiwa : 0
+
+  // Update list nama-nama jiwa ketika jumlah jiwa berubah
+  useEffect(() => {
+    const currentCount = jiwaList.length
+    const targetCount = jiwa || 0
+
+    if (targetCount === currentCount) return
+
+    const muzakki = muzakkiList.find((m) => m.id === form.muzakki_id)
+
+    if (targetCount > currentCount) {
+      // Tambah baris
+      const baru = [...jiwaList]
+      for (let i = currentCount; i < targetCount; i++) {
+        baru.push({
+          urutan: i + 1,
+          nama: i === 0 ? muzakki?.nama || '' : '',
+          is_kepala_keluarga: i === 0,
+          alamat: muzakki?.alamat || '',
+          rt: muzakki?.rt || '',
+        })
+      }
+      setJiwaList(baru)
+    } else {
+      // Kurangi baris
+      setJiwaList(jiwaList.slice(0, targetCount))
+    }
+  }, [jiwa, form.muzakki_id, muzakkiList])
 
   useEffect(() => {
     if (!form.muzakki_id) return setPreview(null)
@@ -121,13 +150,43 @@ export default function PenerimaanPage() {
       berat_kg: '',
       catatan: '',
     })
+    setJiwaList([])
     setPreview(null)
     setShowForm(true)
   }
 
   function handleMuzakkiChange(id) {
     const m = muzakkiList.find((x) => x.id === id)
-    setForm({ ...form, muzakki_id: id, jumlah_jiwa: m ? String(m.jumlah_jiwa) : '' })
+    const jumlah = m ? String(m.jumlah_jiwa) : ''
+    setForm({
+      ...form,
+      muzakki_id: id,
+      jumlah_jiwa: jumlah,
+    })
+
+    // Generate jiwa list awal
+    if (m) {
+      const count = parseInt(m.jumlah_jiwa) || 0
+      const baru = []
+      for (let i = 0; i < count; i++) {
+        baru.push({
+          urutan: i + 1,
+          nama: i === 0 ? m.nama : '',
+          is_kepala_keluarga: i === 0,
+          alamat: m.alamat || '',
+          rt: m.rt || '',
+        })
+      }
+      setJiwaList(baru)
+    } else {
+      setJiwaList([])
+    }
+  }
+
+  function updateNamaJiwa(index, nama) {
+    const baru = [...jiwaList]
+    baru[index] = { ...baru[index], nama }
+    setJiwaList(baru)
   }
 
   async function handleSubmit(e) {
@@ -135,6 +194,13 @@ export default function PenerimaanPage() {
     if (!form.muzakki_id) return alert('Pilih muzakki dulu')
 
     const jiwaSubmit = parseInt(form.jumlah_jiwa) || 1
+
+    // Validasi: semua nama jiwa harus diisi
+    for (let i = 0; i < jiwaSubmit; i++) {
+      if (!jiwaList[i] || !jiwaList[i].nama.trim()) {
+        return alert(`❌ Nama jiwa ke-${i + 1} wajib diisi!`)
+      }
+    }
 
     if (form.kategori === 'zakat_fitrah' && form.jenis === 'uang') {
       const kewajiban = nishabUang * jiwaSubmit
@@ -145,8 +211,7 @@ export default function PenerimaanPage() {
           `❌ PEMBAYARAN KURANG!\n\n` +
           `Kewajiban: Rp ${kewajiban.toLocaleString('id-ID')}\n` +
           `Dibayar: Rp ${bayar.toLocaleString('id-ID')}\n` +
-          `Kurang: Rp ${(kewajiban - bayar).toLocaleString('id-ID')}\n\n` +
-          `Silakan periksa kembali nominal.`
+          `Kurang: Rp ${(kewajiban - bayar).toLocaleString('id-ID')}`
         )
       }
     }
@@ -160,8 +225,7 @@ export default function PenerimaanPage() {
           `❌ PEMBAYARAN KURANG!\n\n` +
           `Kewajiban: ${kewajiban} kg\n` +
           `Dibayar: ${bayar} kg\n` +
-          `Kurang: ${(kewajiban - bayar).toFixed(2)} kg\n\n` +
-          `Silakan periksa kembali berat.`
+          `Kurang: ${(kewajiban - bayar).toFixed(2)} kg`
         )
       }
     }
@@ -184,6 +248,21 @@ export default function PenerimaanPage() {
 
     const muzakki = muzakkiList.find((x) => x.id === form.muzakki_id)
     const namaMuzakki = muzakki?.nama || 'Muzakki'
+
+    // Simpan detail nama-nama jiwa
+    const jiwaData = jiwaList.slice(0, jiwaSubmit).map((j) => ({
+      penerimaan_id: header.id,
+      urutan: j.urutan,
+      nama: j.nama,
+      is_kepala_keluarga: j.is_kepala_keluarga,
+      alamat: j.alamat,
+      rt: j.rt,
+    }))
+
+    const { error: errJiwa } = await supabase.from('penerimaan_jiwa').insert(jiwaData)
+    if (errJiwa) {
+      console.error('Gagal simpan jiwa:', errJiwa)
+    }
 
     const details = []
     let kelebihanUangUntukKas = 0
@@ -257,6 +336,8 @@ export default function PenerimaanPage() {
     if (relatedKas && relatedKas.length > 0) {
       await supabase.from('kas_masjid').delete().eq('referensi_id', id)
     }
+
+    await supabase.from('penerimaan_jiwa').delete().eq('penerimaan_id', id)
 
     const { error } = await supabase.from('penerimaan').delete().eq('id', id)
     if (error) alert('Gagal hapus: ' + error.message)
@@ -361,6 +442,7 @@ export default function PenerimaanPage() {
                       </label>
                     </div>
                   </div>
+
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Jumlah Jiwa</label>
                     <input
@@ -372,6 +454,48 @@ export default function PenerimaanPage() {
                       placeholder="Contoh: 3"
                     />
                   </div>
+
+                  {/* DAFTAR NAMA JIWA */}
+                  {form.muzakki_id && jiwa > 0 && (
+                    <div className="border border-slate-200 rounded-lg overflow-hidden">
+                      <div className="bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700">
+                        📋 Detail Jiwa ({jiwa} orang)
+                      </div>
+                      <div className="divide-y">
+                        {jiwaList.slice(0, jiwa).map((j, i) => (
+                          <div key={i} className="p-3 bg-white">
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs font-bold text-slate-500 mt-2 w-5">
+                                {i + 1}.
+                              </span>
+                              <div className="flex-1 space-y-2">
+                                <div>
+                                  <label className="block text-xs text-slate-600 mb-1">
+                                    Nama {j.is_kepala_keluarga ? '(Kepala Keluarga)' : `(Anggota ${i})`}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={j.nama}
+                                    onChange={(e) => updateNamaJiwa(i, e.target.value)}
+                                    disabled={j.is_kepala_keluarga}
+                                    className={`w-full border rounded-lg px-3 py-2 text-sm ${
+                                      j.is_kepala_keluarga
+                                        ? 'bg-slate-100 text-slate-600 border-slate-200'
+                                        : 'bg-white text-slate-900 border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500'
+                                    }`}
+                                    placeholder={j.is_kepala_keluarga ? 'Otomatis dari data muzakki' : 'Ketik nama anggota'}
+                                  />
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  📍 {j.alamat || '-'} {j.rt ? `| RT ${j.rt}` : ''}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {jiwa > 0 && (
                     <div className="bg-amber-50 border border-amber-300 rounded-lg p-3">
