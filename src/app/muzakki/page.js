@@ -11,6 +11,7 @@ export default function MuzakkiPage() {
   const [form, setForm] = useState({
     nama: '',
     alamat: '',
+    rt: '',
     no_hp: '',
     jumlah_jiwa: '',
   })
@@ -36,7 +37,7 @@ export default function MuzakkiPage() {
 
   function handleTambah() {
     setEditing(null)
-    setForm({ nama: '', alamat: '', no_hp: '', jumlah_jiwa: '' })
+    setForm({ nama: '', alamat: '', rt: '', no_hp: '', jumlah_jiwa: '' })
     setShowForm(true)
   }
 
@@ -45,6 +46,7 @@ export default function MuzakkiPage() {
     setForm({
       nama: item.nama || '',
       alamat: item.alamat || '',
+      rt: item.rt || '',
       no_hp: item.no_hp || '',
       jumlah_jiwa: item.jumlah_jiwa || '',
     })
@@ -58,6 +60,7 @@ export default function MuzakkiPage() {
     const data = {
       nama: form.nama,
       alamat: form.alamat,
+      rt: form.rt || null,
       no_hp: form.no_hp,
       jumlah_jiwa: parseInt(form.jumlah_jiwa) || 1,
     }
@@ -89,7 +92,7 @@ export default function MuzakkiPage() {
   const onlyDigits = (v) => v.replace(/\D/g, '')
 
   return (
-    <main className="max-w-5xl mx-auto p-6">
+    <main className="max-w-5xl mx-auto p-6 min-h-screen bg-orange-50">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">👥 Data Muzakki</h1>
@@ -117,10 +120,11 @@ export default function MuzakkiPage() {
         <div className="bg-white rounded-xl shadow overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs md:text-sm">
-              <thead className="bg-gray-100 text-gray-600">
+              <thead className="bg-orange-100 text-orange-900">
                 <tr>
                   <th className="px-3 py-2">Nama</th>
                   <th className="px-3 py-2">Alamat</th>
+                  <th className="px-3 py-2 text-center">RT</th>
                   <th className="px-3 py-2">No HP</th>
                   <th className="px-3 py-2 text-center">Jiwa</th>
                   <th className="px-3 py-2 text-center">Aksi</th>
@@ -128,9 +132,14 @@ export default function MuzakkiPage() {
               </thead>
               <tbody className="text-gray-800">
                 {list.map((m) => (
-                  <tr key={m.id} className="border-t hover:bg-gray-50">
+                  <tr key={m.id} className="border-t hover:bg-orange-50">
                     <td className="px-3 py-2 font-medium text-gray-800">{m.nama}</td>
                     <td className="px-3 py-2 text-gray-600">{m.alamat || '-'}</td>
+                    <td className="px-3 py-2 text-center">
+                      <span className="inline-block px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs font-medium">
+                        {m.rt || '-'}
+                      </span>
+                    </td>
                     <td className="px-3 py-2 text-gray-600">{m.no_hp || '-'}</td>
                     <td className="px-3 py-2 text-center">{m.jumlah_jiwa}</td>
                     <td className="px-3 py-2 text-center whitespace-nowrap">
@@ -156,8 +165,8 @@ export default function MuzakkiPage() {
       )}
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 my-8">
             <h2 className="text-xl font-bold mb-4 text-gray-800">
               {editing ? 'Edit Muzakki' : 'Tambah Muzakki'}
             </h2>
@@ -175,17 +184,31 @@ export default function MuzakkiPage() {
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Alamat
-                </label>
-                <input
-                  type="text"
-                  value={form.alamat}
-                  onChange={(e) => setForm({ ...form, alamat: e.target.value })}
-                  className={inputClass}
-                  placeholder="Contoh: Jl. Melati No. 5"
-                />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Alamat
+                  </label>
+                  <input
+                    type="text"
+                    value={form.alamat}
+                    onChange={(e) => setForm({ ...form, alamat: e.target.value })}
+                    className={inputClass}
+                    placeholder="Contoh: Jl. Melati No. 5"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    RT
+                  </label>
+                  <input
+                    type="text"
+                    value={form.rt}
+                    onChange={(e) => setForm({ ...form, rt: e.target.value })}
+                    className={inputClass}
+                    placeholder="001"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
