@@ -139,7 +139,7 @@ export default function PenerimaanPage() {
     const namaMuzakki = muzakki?.nama || 'Muzakki'
 
     const details = []
-    let kelebihanUangUntukKas = 0  // untuk auto-insert ke kas_masjid
+    let kelebihanUangUntukKas = 0
 
     if (form.kategori === 'zakat_fitrah' && form.jenis === 'uang') {
       const kewajiban = nishabUang * jiwa
@@ -187,7 +187,6 @@ export default function PenerimaanPage() {
       return
     }
 
-    // ⭐ AUTO-INSERT KE KAS MASJID kalau ada infaq uang
     if (kelebihanUangUntukKas > 0) {
       const { error: errKas } = await supabase.from('kas_masjid').insert({
         tipe: 'masuk',
@@ -199,7 +198,6 @@ export default function PenerimaanPage() {
       })
       if (errKas) {
         console.error('Gagal insert kas_masjid:', errKas)
-        // Tidak batalkan transaksi, cuma log error
       }
     }
 
@@ -209,13 +207,11 @@ export default function PenerimaanPage() {
   }
 
   async function handleHapus(id) {
-    // Cek dulu apakah ada kas_masjid yang terkait
     const { data: relatedKas } = await supabase
       .from('kas_masjid')
       .select('id')
       .eq('referensi_id', id)
 
-    // Hapus kas_masjid terkait (kalau ada)
     if (relatedKas && relatedKas.length > 0) {
       await supabase.from('kas_masjid').delete().eq('referensi_id', id)
     }
