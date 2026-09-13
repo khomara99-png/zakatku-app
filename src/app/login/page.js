@@ -3,51 +3,44 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+const USERS = [
+  { email: 'admin@zakatku.local', password: 'Admin123!', name: 'Administrator', role: 'admin' },
+  { email: 'amil@zakatku.local', password: 'Amil123!', name: 'Amil Masjid', role: 'amil' },
+]
+
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  async function handleLogin(e) {
+  function handleLogin(e) {
     e.preventDefault()
     setError('')
     setLoading(true)
 
-    try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-      const res = await fetch(
-        `${supabaseUrl}/auth/v1/token?grant_type=password`,
-        {
-          method: 'POST',
-          headers: {
-            apikey: supabaseKey,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, password }),
-        }
+    // Delay kecil biar terasa natural
+    setTimeout(() => {
+      const user = USERS.find(
+        (u) => u.email === email.trim() && u.password === password
       )
 
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error_description || data.msg || data.error || 'Login gagal')
+      if (!user) {
+        setError('Email atau password salah')
         setLoading(false)
         return
       }
 
-      // Simpan session
-      localStorage.setItem('zakatku_session', JSON.stringify(data))
+      // Simpan session di localStorage
+      localStorage.setItem(
+        'zakatku_user',
+        JSON.stringify({ email: user.email, name: user.name, role: user.role })
+      )
 
       router.push('/')
       router.refresh()
-    } catch (err) {
-      setError('Koneksi error: ' + err.message)
-      setLoading(false)
-    }
+    }, 500)
   }
 
   const inputClass =
@@ -72,7 +65,6 @@ export default function LoginPage() {
               className={inputClass}
               placeholder="admin@zakatku.local"
               required
-              autoComplete="email"
             />
           </div>
 
@@ -85,7 +77,6 @@ export default function LoginPage() {
               className={inputClass}
               placeholder="••••••••"
               required
-              autoComplete="current-password"
             />
           </div>
 
@@ -106,7 +97,7 @@ export default function LoginPage() {
 
         <div className="mt-6 pt-6 border-t border-slate-200">
           <p className="text-xs text-slate-400 text-center">
-            Hanya user terdaftar yang bisa login
+            Testing mode — login lokal
           </p>
         </div>
       </div>
