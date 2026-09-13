@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
@@ -16,19 +15,39 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
 
-    const { data, error: err } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    if (err) {
-      setError(err.message)
+      const res = await fetch(
+        `${supabaseUrl}/auth/v1/token?grant_type=password`,
+        {
+          method: 'POST',
+          headers: {
+            apikey: supabaseKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        }
+      )
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error_description || data.msg || data.error || 'Login gagal')
+        setLoading(false)
+        return
+      }
+
+      // Simpan session
+      localStorage.setItem('zakatku_session', JSON.stringify(data))
+
+      router.push('/')
+      router.refresh()
+    } catch (err) {
+      setError('Koneksi error: ' + err.message)
       setLoading(false)
-      return
     }
-
-    router.push('/')
-    router.refresh()
   }
 
   const inputClass =
