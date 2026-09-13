@@ -24,6 +24,7 @@ export default function PenerimaanPage() {
     nominal: '',
     berat_kg: '',
     catatan: '',
+    tanggal: new Date().toISOString().slice(0, 10),
   })
   const [jiwaList, setJiwaList] = useState([])
   const [preview, setPreview] = useState(null)
@@ -60,7 +61,6 @@ export default function PenerimaanPage() {
   const kewajibanUang = form.kategori === 'zakat_fitrah' ? nishabUang * jiwa : 0
   const kewajibanBeras = form.kategori === 'zakat_fitrah' ? nishabBeras * jiwa : 0
 
-  // Update list nama-nama jiwa ketika jumlah jiwa berubah
   useEffect(() => {
     const currentCount = jiwaList.length
     const targetCount = jiwa || 0
@@ -70,7 +70,6 @@ export default function PenerimaanPage() {
     const muzakki = muzakkiList.find((m) => m.id === form.muzakki_id)
 
     if (targetCount > currentCount) {
-      // Tambah baris
       const baru = [...jiwaList]
       for (let i = currentCount; i < targetCount; i++) {
         baru.push({
@@ -83,7 +82,6 @@ export default function PenerimaanPage() {
       }
       setJiwaList(baru)
     } else {
-      // Kurangi baris
       setJiwaList(jiwaList.slice(0, targetCount))
     }
   }, [jiwa, form.muzakki_id, muzakkiList])
@@ -149,6 +147,7 @@ export default function PenerimaanPage() {
       nominal: '',
       berat_kg: '',
       catatan: '',
+      tanggal: new Date().toISOString().slice(0, 10),
     })
     setJiwaList([])
     setPreview(null)
@@ -164,7 +163,6 @@ export default function PenerimaanPage() {
       jumlah_jiwa: jumlah,
     })
 
-    // Generate jiwa list awal
     if (m) {
       const count = parseInt(m.jumlah_jiwa) || 0
       const baru = []
@@ -192,10 +190,10 @@ export default function PenerimaanPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     if (!form.muzakki_id) return alert('Pilih muzakki dulu')
+    if (!form.tanggal) return alert('Tanggal wajib diisi')
 
     const jiwaSubmit = parseInt(form.jumlah_jiwa) || 1
 
-    // Validasi: semua nama jiwa harus diisi
     for (let i = 0; i < jiwaSubmit; i++) {
       if (!jiwaList[i] || !jiwaList[i].nama.trim()) {
         return alert(`❌ Nama jiwa ke-${i + 1} wajib diisi!`)
@@ -230,9 +228,9 @@ export default function PenerimaanPage() {
       }
     }
 
-    const tanggal = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+    const tanggalKode = form.tanggal.replace(/-/g, '')
     const rand = Math.floor(Math.random() * 9000) + 1000
-    const kode = `ZK-IN-${tanggal}-${rand}`
+    const kode = `ZK-IN-${tanggalKode}-${rand}`
 
     const { data: header, error: errH } = await supabase
       .from('penerimaan')
@@ -240,6 +238,7 @@ export default function PenerimaanPage() {
         kode,
         muzakki_id: form.muzakki_id,
         catatan: form.catatan || null,
+        tanggal: form.tanggal,
       })
       .select()
       .single()
@@ -249,7 +248,6 @@ export default function PenerimaanPage() {
     const muzakki = muzakkiList.find((x) => x.id === form.muzakki_id)
     const namaMuzakki = muzakki?.nama || 'Muzakki'
 
-    // Simpan detail nama-nama jiwa
     const jiwaData = jiwaList.slice(0, jiwaSubmit).map((j) => ({
       penerimaan_id: header.id,
       urutan: j.urutan,
@@ -260,9 +258,7 @@ export default function PenerimaanPage() {
     }))
 
     const { error: errJiwa } = await supabase.from('penerimaan_jiwa').insert(jiwaData)
-    if (errJiwa) {
-      console.error('Gagal simpan jiwa:', errJiwa)
-    }
+    if (errJiwa) console.error('Gagal simpan jiwa:', errJiwa)
 
     const details = []
     let kelebihanUangUntukKas = 0
@@ -318,7 +314,7 @@ export default function PenerimaanPage() {
         sumber: 'infaq_kelebihan_zakat',
         keterangan: `Infaq dari ${namaMuzakki} (${kode})`,
         referensi_id: header.id,
-        tanggal: new Date().toISOString().slice(0, 10),
+        tanggal: form.tanggal,
       })
     }
 
@@ -374,6 +370,7 @@ export default function PenerimaanPage() {
             <table className="w-full text-left text-xs md:text-sm">
               <thead className="bg-slate-100 text-slate-700">
                 <tr>
+                  <th className="px-3 py-2">Tanggal</th>
                   <th className="px-3 py-2">Kode</th>
                   <th className="px-3 py-2">Muzakki</th>
                   <th className="px-3 py-2">Rincian</th>
@@ -383,6 +380,7 @@ export default function PenerimaanPage() {
               <tbody className="text-slate-800">
                 {list.map((p) => (
                   <tr key={p.id} className="border-t hover:bg-slate-50 align-top">
+                    <td className="px-3 py-2 text-slate-700 whitespace-nowrap">{p.tanggal || '-'}</td>
                     <td className="px-3 py-2 font-mono text-xs text-slate-600">{p.kode}</td>
                     <td className="px-3 py-2 font-medium text-slate-800">{p.muzakki?.nama || '-'}</td>
                     <td className="px-3 py-2">
@@ -410,6 +408,17 @@ export default function PenerimaanPage() {
           <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 my-8">
             <h2 className="text-xl font-bold mb-4 text-slate-800">Input Penerimaan Baru</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Tanggal Penerimaan *</label>
+                <input
+                  type="date"
+                  value={form.tanggal}
+                  onChange={(e) => setForm({ ...form, tanggal: e.target.value })}
+                  className={inputClass}
+                  required
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Muzakki *</label>
                 <select value={form.muzakki_id} onChange={(e) => handleMuzakkiChange(e.target.value)} className={inputClass} required>
@@ -455,19 +464,16 @@ export default function PenerimaanPage() {
                     />
                   </div>
 
-                  {/* DAFTAR NAMA JIWA */}
                   {form.muzakki_id && jiwa > 0 && (
                     <div className="border border-slate-200 rounded-lg overflow-hidden">
                       <div className="bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700">
                         📋 Detail Jiwa ({jiwa} orang)
                       </div>
-                      <div className="divide-y">
+                      <div className="divide-y max-h-64 overflow-y-auto">
                         {jiwaList.slice(0, jiwa).map((j, i) => (
                           <div key={i} className="p-3 bg-white">
                             <div className="flex items-start gap-2">
-                              <span className="text-xs font-bold text-slate-500 mt-2 w-5">
-                                {i + 1}.
-                              </span>
+                              <span className="text-xs font-bold text-slate-500 mt-2 w-5">{i + 1}.</span>
                               <div className="flex-1 space-y-2">
                                 <div>
                                   <label className="block text-xs text-slate-600 mb-1">
