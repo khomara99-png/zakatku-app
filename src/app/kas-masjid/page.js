@@ -57,6 +57,17 @@ export default function KasMasjidPage() {
     if (nominal <= 0) return alert('Nominal harus lebih dari 0')
     if (!form.keterangan.trim()) return alert('Keterangan wajib diisi')
 
+    // ⭐ VALIDASI SALDO — pengeluaran tidak boleh melebihi saldo
+    if (tipe === 'keluar' && nominal > saldo) {
+      return alert(
+        `❌ PENGELUARAN MELEBIHI SALDO!\n\n` +
+        `Saldo Kas Masjid: Rp ${saldo.toLocaleString('id-ID')}\n` +
+        `Pengeluaran: Rp ${nominal.toLocaleString('id-ID')}\n` +
+        `Kekurangan: Rp ${(nominal - saldo).toLocaleString('id-ID')}\n\n` +
+        `Silakan periksa kembali nominal.`
+      )
+    }
+
     const data = {
       tipe,
       nominal,
@@ -81,7 +92,7 @@ export default function KasMasjidPage() {
   }
 
   const inputClass =
-    'w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500'
+    'w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500'
 
   const onlyDigits = (v) => v.replace(/\D/g, '')
 
@@ -96,47 +107,69 @@ export default function KasMasjidPage() {
   return (
     <main className="max-w-6xl mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">🕌 Kas Masjid</h1>
-        <p className="text-gray-500 text-sm">
+        <h1 className="text-2xl font-bold text-slate-800">🕌 Kas Masjid</h1>
+        <p className="text-slate-500 text-sm">
           Kelola infaq, shodaqoh, & sisa pembulatan
         </p>
       </div>
 
       {loading ? (
-        <div className="bg-white rounded-xl shadow p-8 text-center text-gray-500">
+        <div className="bg-white rounded-xl shadow p-8 text-center text-slate-500">
           Memuat...
         </div>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow p-5 text-white">
-              <p className="text-xs uppercase opacity-80">💰 Saldo Kas Masjid</p>
+            <div
+              className={`rounded-xl shadow p-5 text-white ${
+                saldo < 0
+                  ? 'bg-gradient-to-br from-red-600 to-red-700'
+                  : 'bg-gradient-to-br from-blue-600 to-blue-700'
+              }`}
+            >
+              <p className="text-xs uppercase opacity-80">
+                {saldo < 0 ? '⚠️ SALDO MINUS' : '💰 Saldo Kas Masjid'}
+              </p>
               <p className="text-2xl md:text-3xl font-bold mt-2">
                 Rp {saldo.toLocaleString('id-ID')}
               </p>
-              <p className="text-xs opacity-70 mt-2">Total dana tersedia</p>
+              <p className="text-xs opacity-70 mt-2">
+                {saldo < 0 ? 'PERLU KOREKSI DATA' : 'Total dana tersedia'}
+              </p>
             </div>
 
             <div className="bg-white rounded-xl shadow p-5">
-              <p className="text-xs text-gray-500 uppercase">Total Masuk</p>
+              <p className="text-xs text-slate-500 uppercase">Total Masuk</p>
               <p className="text-xl md:text-2xl font-bold text-emerald-700 mt-1">
                 Rp {totalMasuk.toLocaleString('id-ID')}
               </p>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-slate-500 mt-2">
                 Bulan ini: Rp {masukBulanIni.toLocaleString('id-ID')}
               </p>
             </div>
 
             <div className="bg-white rounded-xl shadow p-5">
-              <p className="text-xs text-gray-500 uppercase">Total Keluar</p>
+              <p className="text-xs text-slate-500 uppercase">Total Keluar</p>
               <p className="text-xl md:text-2xl font-bold text-red-600 mt-1">
                 Rp {totalKeluar.toLocaleString('id-ID')}
               </p>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-slate-500 mt-2">
                 Bulan ini: Rp {keluarBulanIni.toLocaleString('id-ID')}
               </p>
             </div>
           </div>
+
+          {saldo < 0 && (
+            <div className="bg-red-50 border border-red-300 rounded-xl p-4 mb-6">
+              <p className="text-sm font-semibold text-red-800 mb-1">
+                ⚠️ PERHATIAN: Saldo Kas Masjid MINUS
+              </p>
+              <p className="text-xs text-red-700">
+                Ada pengeluaran yang melebihi pemasukan. Periksa data dan hapus transaksi yang salah.
+                Setelah validasi aktif, pengeluaran baru tidak bisa melebihi saldo.
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <button
@@ -147,27 +180,28 @@ export default function KasMasjidPage() {
             </button>
             <button
               onClick={() => bukaForm('keluar')}
-              className="bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-medium"
+              disabled={saldo <= 0}
+              className="bg-red-600 hover:bg-red-700 disabled:bg-slate-300 text-white py-3 rounded-xl font-medium"
             >
-              📤 Catat Pengeluaran
+              {saldo <= 0 ? '🚫 Saldo Habis' : '📤 Catat Pengeluaran'}
             </button>
           </div>
 
           <div className="bg-white rounded-xl shadow overflow-hidden">
-            <div className="px-4 py-3 bg-gray-50 border-b">
-              <h2 className="font-semibold text-gray-700 text-sm md:text-base">
+            <div className="px-4 py-3 bg-slate-50 border-b">
+              <h2 className="font-semibold text-slate-700 text-sm md:text-base">
                 📋 Riwayat Kas ({list.length} transaksi)
               </h2>
             </div>
 
             {list.length === 0 ? (
-              <div className="p-8 text-center text-gray-500 text-sm">
+              <div className="p-8 text-center text-slate-500 text-sm">
                 Belum ada transaksi kas.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs md:text-sm">
-                  <thead className="bg-gray-50 text-gray-600">
+                  <thead className="bg-slate-50 text-slate-600">
                     <tr>
                       <th className="px-3 py-2">Tanggal</th>
                       <th className="px-3 py-2 text-center">Tipe</th>
@@ -177,10 +211,10 @@ export default function KasMasjidPage() {
                       <th className="px-3 py-2 text-center">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody className="text-gray-800">
+                  <tbody className="text-slate-800">
                     {list.map((x) => (
-                      <tr key={x.id} className="border-t hover:bg-gray-50">
-                        <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
+                      <tr key={x.id} className="border-t hover:bg-slate-50">
+                        <td className="px-3 py-2 text-slate-700 whitespace-nowrap">
                           {x.tanggal}
                         </td>
                         <td className="px-3 py-2 text-center">
@@ -194,10 +228,10 @@ export default function KasMasjidPage() {
                             {x.tipe === 'masuk' ? '↓ Masuk' : '↑ Keluar'}
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-gray-600 text-xs">
+                        <td className="px-3 py-2 text-slate-600 text-xs">
                           {x.sumber || '-'}
                         </td>
-                        <td className="px-3 py-2 text-gray-700">
+                        <td className="px-3 py-2 text-slate-700">
                           {x.keterangan || '-'}
                         </td>
                         <td
@@ -229,12 +263,22 @@ export default function KasMasjidPage() {
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 my-8">
-            <h2 className="text-xl font-bold mb-4 text-gray-800">
+            <h2 className="text-xl font-bold mb-4 text-slate-800">
               {tipe === 'masuk' ? '📥 Catat Pemasukan' : '📤 Catat Pengeluaran'}
             </h2>
+
+            {tipe === 'keluar' && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p className="text-xs text-slate-600">Saldo tersedia:</p>
+                <p className="text-lg font-bold text-blue-700">
+                  Rp {saldo.toLocaleString('id-ID')}
+                </p>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Tanggal
                 </label>
                 <input
@@ -247,7 +291,7 @@ export default function KasMasjidPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Nominal (Rp) *
                 </label>
                 <input
@@ -264,7 +308,7 @@ export default function KasMasjidPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Sumber
                 </label>
                 <input
@@ -279,7 +323,7 @@ export default function KasMasjidPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Keterangan *
                 </label>
                 <input
@@ -302,7 +346,7 @@ export default function KasMasjidPage() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50"
+                  className="flex-1 border border-slate-300 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50"
                 >
                   Batal
                 </button>
