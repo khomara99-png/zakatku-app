@@ -27,56 +27,59 @@ function tanggalIndo(tgl) {
   return `${d.getDate()} ${bulan[d.getMonth()]} ${d.getFullYear()}`
 }
 
-// === KOP MASJID (CENTERED + GARIS EMBOSSED) ===
+// === KOP MASJID (LOGO KIRI + TEKS CENTER DI SISI KANAN) ===
 function gambarKop(doc) {
   const pageWidth = doc.internal.pageSize.getWidth()
-  const centerX = pageWidth / 2
 
-  // Logo di tengah atas
+  // Logo kiri, ukuran 28x28
   try {
-    doc.addImage(MASJID.logo, 'PNG', centerX - 12, 10, 24, 24)
+    doc.addImage(MASJID.logo, 'PNG', 14, 14, 28, 28)
   } catch (e) {
     console.warn('Logo tidak bisa dimuat:', e)
   }
 
-  // Nama masjid (center) — warna hitam soft, bukan hitam pekat
+  // Area teks di kanan logo — teks di-center di area ini
+  const areaKiri = 48
+  const areaKanan = pageWidth - 14
+  const centerText = (areaKiri + areaKanan) / 2
+
+  // Nama DKM
   doc.setTextColor(40, 40, 40)
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(13)
-  doc.text(MASJID.nama1, centerX, 40, { align: 'center' })
+  doc.setFontSize(11)
+  doc.text(MASJID.nama1, centerText, 20, { align: 'center' })
 
-  doc.setFontSize(18)
-  doc.text(MASJID.nama2, centerX, 48, { align: 'center' })
+  // Nurul Huda
+  doc.setFontSize(16)
+  doc.text(MASJID.nama2, centerText, 28, { align: 'center' })
 
-  // Alamat (center) — warna abu soft (embossed look)
+  // Alamat (abu soft)
   doc.setTextColor(90, 90, 90)
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(9)
-  doc.text(MASJID.alamat1, centerX, 54, { align: 'center' })
-  doc.text(MASJID.alamat2, centerX, 58, { align: 'center' })
-  doc.text(MASJID.alamat3, centerX, 62, { align: 'center' })
+  doc.setFontSize(8)
+  doc.text(MASJID.alamat1, centerText, 34, { align: 'center' })
+  doc.text(MASJID.alamat2, centerText, 38, { align: 'center' })
+  doc.text(MASJID.alamat3, centerText, 42, { align: 'center' })
 
-  // === GARIS EMBOSSED (abu soft, kesan timbul) ===
-  // Garis bayangan (lebih gelap di bawah)
+  // Garis embossed (abu terang + gelap)
   doc.setDrawColor(180, 180, 180)
   doc.setLineWidth(0.8)
-  doc.line(14, 66.3, pageWidth - 14, 66.3)
+  doc.line(14, 47.3, pageWidth - 14, 47.3)
 
-  // Garis utama (terang di atas, kesan embossed)
   doc.setDrawColor(80, 80, 80)
   doc.setLineWidth(0.4)
-  doc.line(14, 66, pageWidth - 14, 66)
+  doc.line(14, 47, pageWidth - 14, 47)
 
-  // Reset warna teks ke hitam untuk konten berikutnya
+  // Reset warna teks
   doc.setTextColor(0, 0, 0)
 }
 
-// === TANDA TANGAN (CENTERED, TANPA GARIS) ===
+// === TANDA TANGAN (CENTER, TANPA GARIS) ===
 function gambarTandaTangan(doc, tanggal) {
   const pageWidth = doc.internal.pageSize.getWidth()
   const y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : 200
 
-  // Tanggal di kanan
+  // Tanggal kanan
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
   doc.setTextColor(0, 0, 0)
@@ -84,25 +87,18 @@ function gambarTandaTangan(doc, tanggal) {
     align: 'center',
   })
 
-  // Posisi tanda tangan — 2 kolom
   const col1X = 60
   const col2X = pageWidth - 60
   const ttdY = y + 8
 
-  // === AMIL ZAKAT (kiri) ===
+  // Amil Zakat (kiri)
   doc.setFontSize(10)
   doc.text('Amil Zakat,', col1X, ttdY, { align: 'center' })
-
-  // Ruang tanda tangan (kosong untuk ttd manual)
-  // Tanpa garis — hanya spasi
-
-  // Nama terang (titik-titik) — di bawah ruang ttd
-  doc.setFontSize(10)
   doc.text('(............................)', col1X, ttdY + 30, {
     align: 'center',
   })
 
-  // === KETUA DKM (kanan) ===
+  // Ketua DKM (kanan)
   doc.text('Ketua DKM,', col2X, ttdY, { align: 'center' })
   doc.text('(............................)', col2X, ttdY + 30, {
     align: 'center',
@@ -122,26 +118,26 @@ export function cetakBuktiPenerimaan(data) {
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(13)
   doc.setTextColor(40, 40, 40)
-  doc.text('BUKTI PENERIMAAN ZAKAT', pageWidth / 2, 76, { align: 'center' })
+  doc.text('BUKTI PENERIMAAN ZAKAT', pageWidth / 2, 58, { align: 'center' })
 
   // Info bukti
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
   doc.setTextColor(0, 0, 0)
-  doc.text(`No. Bukti: ${data.kode}`, 14, 86)
-  doc.text(`Tanggal  : ${tanggalIndo(data.tanggal)}`, 14, 91)
+  doc.text(`No. Bukti: ${data.kode}`, 14, 68)
+  doc.text(`Tanggal  : ${tanggalIndo(data.tanggal)}`, 14, 73)
 
   // Info muzakki
   doc.setFont('helvetica', 'bold')
-  doc.text('Muzakki:', 14, 100)
+  doc.text('Muzakki:', 14, 82)
 
   doc.setFont('helvetica', 'normal')
-  doc.text(`Nama    : ${data.muzakki?.nama || '-'}`, 14, 106)
-  doc.text(`Alamat  : ${data.muzakki?.alamat || '-'}`, 14, 111)
-  doc.text(`RT      : ${data.muzakki?.rt || '-'}`, 14, 116)
+  doc.text(`Nama    : ${data.muzakki?.nama || '-'}`, 14, 88)
+  doc.text(`Alamat  : ${data.muzakki?.alamat || '-'}`, 14, 93)
+  doc.text(`RT      : ${data.muzakki?.rt || '-'}`, 14, 98)
 
   // Detail jiwa
-  let currentY = 124
+  let currentY = 106
   if (data.jiwa && data.jiwa.length > 0) {
     doc.setFont('helvetica', 'bold')
     doc.text(`Detail Jiwa (${data.jiwa.length} orang):`, 14, currentY)
@@ -217,7 +213,6 @@ export function cetakBuktiPenerimaan(data) {
     { align: 'center' }
   )
 
-  // Auto download
   doc.save(`Bukti-Penerimaan-${data.kode}.pdf`)
 }
 
@@ -234,15 +229,15 @@ export function cetakBuktiPenyaluran(data, daftarPenerima) {
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(13)
   doc.setTextColor(40, 40, 40)
-  doc.text('BUKTI PENYALURAN ZAKAT', pageWidth / 2, 76, { align: 'center' })
+  doc.text('BUKTI PENYALURAN ZAKAT', pageWidth / 2, 58, { align: 'center' })
 
   // Info bukti
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
   doc.setTextColor(0, 0, 0)
-  doc.text(`No. Bukti: ${data.kode}`, 14, 86)
-  doc.text(`Tanggal  : ${tanggalIndo(data.tanggal)}`, 14, 91)
-  doc.text(`Jenis    : ${data.jenis === 'uang' ? 'Uang' : 'Beras'}`, 14, 96)
+  doc.text(`No. Bukti: ${data.kode}`, 14, 68)
+  doc.text(`Tanggal  : ${tanggalIndo(data.tanggal)}`, 14, 73)
+  doc.text(`Jenis    : ${data.jenis === 'uang' ? 'Uang' : 'Beras'}`, 14, 78)
 
   // Ringkasan
   const total = data.total_dibagikan || 0
@@ -250,20 +245,20 @@ export function cetakBuktiPenyaluran(data, daftarPenerima) {
   const jumlah = data.jumlah_penerima || 0
 
   doc.setFont('helvetica', 'bold')
-  doc.text('Ringkasan:', 14, 106)
+  doc.text('Ringkasan:', 14, 88)
 
   doc.setFont('helvetica', 'normal')
   const totalStr = data.jenis === 'uang' ? rp(total) : `${total.toFixed(3)} kg`
   const perStr =
     data.jenis === 'uang' ? rp(perOrang) : `${perOrang.toFixed(3)} kg`
 
-  doc.text(`Total Dibagikan : ${totalStr}`, 14, 112)
-  doc.text(`Per Orang       : ${perStr}`, 14, 117)
-  doc.text(`Jumlah Penerima : ${jumlah} orang`, 14, 122)
+  doc.text(`Total Dibagikan : ${totalStr}`, 14, 94)
+  doc.text(`Per Orang       : ${perStr}`, 14, 99)
+  doc.text(`Jumlah Penerima : ${jumlah} orang`, 14, 104)
 
   // Tabel daftar penerima
   autoTable(doc, {
-    startY: 129,
+    startY: 111,
     head: [['No', 'Nama Penerima', 'Asnaf', 'Diterima']],
     body: (daftarPenerima || []).map((m, i) => [
       i + 1,
@@ -295,6 +290,5 @@ export function cetakBuktiPenyaluran(data, daftarPenerima) {
     { align: 'center' }
   )
 
-  // Auto download
   doc.save(`Bukti-Penyaluran-${data.kode}.pdf`)
 }
