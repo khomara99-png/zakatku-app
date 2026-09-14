@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { cetakBuktiPenerimaan } from '@/lib/pdf-helper'
 
 const KATEGORI = [
   { value: 'zakat_fitrah', label: '🌾 Zakat Fitrah' },
@@ -16,6 +17,7 @@ export default function PenerimaanPage() {
   const [pengaturan, setPengaturan] = useState({})
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [cetakLoading, setCetakLoading] = useState(null)
   const [form, setForm] = useState({
     muzakki_id: '',
     kategori: 'zakat_fitrah',
@@ -34,7 +36,7 @@ export default function PenerimaanPage() {
     const [resPenerimaan, resMuzakki, resPengaturan] = await Promise.all([
       supabase
         .from('penerimaan')
-        .select('*, muzakki:muzakki_id(nama), detail:penerimaan_detail(*)')
+        .select('*, muzakki:muzakki_id(nama, alamat, rt), detail:penerimaan_detail(*)')
         .order('created_at', { ascending: false }),
       supabase.from('muzakki').select('*').order('nama'),
       supabase.from('pengaturan').select('*'),
@@ -53,6 +55,30 @@ export default function PenerimaanPage() {
   useEffect(() => {
     fetchData()
   }, [])
+
+  // === FUNGSI CETAK ===
+  async function handleCetak(penerimaan) {
+    setCetakLoading(penerimaan.id)
+    try {
+      // Ambil detail jiwa
+      const { data: jiwaData } = await supabase
+        .from('penerimaan_jiwa')
+        .select('*')
+        .eq('penerimaan_id', penerimaan.id)
+        .order('urutan')
+
+      cetakBuktiPenerimaan({
+        kode: penerimaan.kode,
+        tanggal: penerimaan.tanggal,
+        muzakki: penerimaan.muzakki,
+        detail: penerimaan.detail || [],
+        jiwa: jiwaData || [],
+      })
+    } catch (err) {
+      alert('Gagal cetak: ' + err.message)
+    }
+    setCetakLoading(null)
+  }
 
   const nishabUang = pengaturan.nishab_fitrah_uang || 45000
   const nishabBeras = pengaturan.nishab_fitrah_beras || 2.5
@@ -393,6 +419,14 @@ export default function PenerimaanPage() {
                       ))}
                     </td>
                     <td className="px-3 py-2 text-center whitespace-nowrap">
+                      <button
+                        onClick={() => handleCetak(p)}
+                        disabled={cetakLoading === p.id}
+                        className="text-emerald-700 hover:underline mr-2 disabled:opacity-50"
+                        title="Cetak bukti PDF"
+                      >
+                        {cetakLoading === p.id ? '⏳' : '🖨️'} Cetak
+                      </button>
                       <button onClick={() => handleHapus(p.id)} className="text-red-600 hover:underline">Hapus</button>
                     </td>
                   </tr>
