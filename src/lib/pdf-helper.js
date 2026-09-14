@@ -13,12 +13,10 @@ const MASJID = {
   logo: '/logo-masjid.png',
 }
 
-// Helper: format rupiah
 function rp(n) {
   return 'Rp ' + Number(n || 0).toLocaleString('id-ID')
 }
 
-// Helper: format tanggal Indonesia
 function tanggalIndo(tgl) {
   if (!tgl) return '-'
   const bulan = [
@@ -29,18 +27,15 @@ function tanggalIndo(tgl) {
   return `${d.getDate()} ${bulan[d.getMonth()]} ${d.getFullYear()}`
 }
 
-// Helper: gambar kop masjid di PDF
 function gambarKop(doc) {
   const pageWidth = doc.internal.pageSize.getWidth()
 
-  // Coba tampilkan logo
   try {
     doc.addImage(MASJID.logo, 'PNG', 14, 10, 24, 24)
   } catch (e) {
     console.warn('Logo tidak bisa dimuat:', e)
   }
 
-  // Nama masjid
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(14)
   doc.text(MASJID.nama1, 42, 17)
@@ -48,14 +43,12 @@ function gambarKop(doc) {
   doc.setFontSize(18)
   doc.text(MASJID.nama2, 42, 25)
 
-  // Alamat
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
   doc.text(MASJID.alamat1, 42, 31)
   doc.text(MASJID.alamat2, 42, 35)
   doc.text(MASJID.alamat3, 42, 39)
 
-  // Garis kop
   doc.setLineWidth(0.5)
   doc.line(14, 42, pageWidth - 14, 42)
 }
@@ -67,21 +60,17 @@ export function cetakBuktiPenerimaan(data) {
   const doc = new jsPDF('p', 'mm', 'a4')
   const pageWidth = doc.internal.pageSize.getWidth()
 
-  // Kop
   gambarKop(doc)
 
-  // Judul
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(13)
   doc.text('BUKTI PENERIMAAN ZAKAT', pageWidth / 2, 52, { align: 'center' })
 
-  // Info bukti
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
   doc.text(`No. Bukti: ${data.kode}`, 14, 62)
   doc.text(`Tanggal  : ${tanggalIndo(data.tanggal)}`, 14, 67)
 
-  // Info muzakki
   doc.setFont('helvetica', 'bold')
   doc.text('Muzakki:', 14, 76)
 
@@ -90,7 +79,6 @@ export function cetakBuktiPenerimaan(data) {
   doc.text(`Alamat  : ${data.muzakki?.alamat || '-'}`, 14, 87)
   doc.text(`RT      : ${data.muzakki?.rt || '-'}`, 14, 92)
 
-  // Tabel detail jiwa (jika ada)
   let currentY = 100
   if (data.jiwa && data.jiwa.length > 0) {
     doc.setFont('helvetica', 'bold')
@@ -117,7 +105,6 @@ export function cetakBuktiPenerimaan(data) {
     currentY = doc.lastAutoTable.finalY + 8
   }
 
-  // Tabel rincian zakat
   doc.setFont('helvetica', 'bold')
   doc.text('Rincian Zakat:', 14, currentY)
 
@@ -145,7 +132,6 @@ export function cetakBuktiPenerimaan(data) {
 
   currentY = doc.lastAutoTable.finalY + 5
 
-  // Total (khusus uang)
   if (total > 0) {
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(11)
@@ -154,7 +140,6 @@ export function cetakBuktiPenerimaan(data) {
     })
   }
 
-  // Tanda tangan
   const ttdY = currentY + 20
   const ttdLeft = 40
   const ttdRight = pageWidth - 60
@@ -170,12 +155,10 @@ export function cetakBuktiPenerimaan(data) {
   doc.line(ttdLeft - 5, ttdY + 25, ttdLeft + 35, ttdY + 25)
   doc.line(ttdRight - 5, ttdY + 25, ttdRight + 35, ttdY + 25)
 
-  // Nama terang (kosong untuk tanda tangan manual)
   doc.setFontSize(9)
   doc.text('(............................)', ttdLeft, ttdY + 30)
   doc.text('(............................)', ttdRight, ttdY + 30)
 
-  // Footer
   doc.setFontSize(8)
   doc.setTextColor(128)
   doc.text(
@@ -185,10 +168,8 @@ export function cetakBuktiPenerimaan(data) {
     { align: 'center' }
   )
 
-  // Buka PDF di tab baru
-  doc.output('dataurlnewwindow', {
-    filename: `Bukti-Penerimaan-${data.kode}.pdf`,
-  })
+  // ⭐ AUTO DOWNLOAD — cara paling ampuh
+  doc.save(`Bukti-Penerimaan-${data.kode}.pdf`)
 }
 
 // ==================
@@ -198,22 +179,18 @@ export function cetakBuktiPenyaluran(data, daftarPenerima) {
   const doc = new jsPDF('p', 'mm', 'a4')
   const pageWidth = doc.internal.pageSize.getWidth()
 
-  // Kop
   gambarKop(doc)
 
-  // Judul
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(13)
   doc.text('BUKTI PENYALURAN ZAKAT', pageWidth / 2, 52, { align: 'center' })
 
-  // Info bukti
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
   doc.text(`No. Bukti: ${data.kode}`, 14, 62)
   doc.text(`Tanggal  : ${tanggalIndo(data.tanggal)}`, 14, 67)
   doc.text(`Jenis    : ${data.jenis === 'uang' ? 'Uang' : 'Beras'}`, 14, 72)
 
-  // Ringkasan
   const total = data.total_dibagikan || 0
   const perOrang = data.total_diterima_per_orang || 0
   const jumlah = data.jumlah_penerima || 0
@@ -230,7 +207,6 @@ export function cetakBuktiPenyaluran(data, daftarPenerima) {
   doc.text(`Per Orang       : ${perStr}`, 14, 93)
   doc.text(`Jumlah Penerima : ${jumlah} orang`, 14, 98)
 
-  // Tabel daftar penerima
   autoTable(doc, {
     startY: 105,
     head: [['No', 'Nama Penerima', 'Asnaf', 'Diterima']],
@@ -251,7 +227,6 @@ export function cetakBuktiPenyaluran(data, daftarPenerima) {
     margin: { left: 14, right: 14 },
   })
 
-  // Tanda tangan
   const ttdY = doc.lastAutoTable.finalY + 15
   const ttdLeft = 40
   const ttdRight = pageWidth - 60
@@ -271,7 +246,6 @@ export function cetakBuktiPenyaluran(data, daftarPenerima) {
   doc.text('(............................)', ttdLeft, ttdY + 30)
   doc.text('(............................)', ttdRight, ttdY + 30)
 
-  // Footer
   doc.setFontSize(8)
   doc.setTextColor(128)
   doc.text(
@@ -281,8 +255,6 @@ export function cetakBuktiPenyaluran(data, daftarPenerima) {
     { align: 'center' }
   )
 
-  // Buka PDF
-  doc.output('dataurlnewwindow', {
-    filename: `Bukti-Penyaluran-${data.kode}.pdf`,
-  })
+  // ⭐ AUTO DOWNLOAD
+  doc.save(`Bukti-Penyaluran-${data.kode}.pdf`)
 }
