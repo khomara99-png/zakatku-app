@@ -10,6 +10,7 @@ const menu = [
   { href: '/mustahik', label: '🤲 Mustahik' },
   { href: '/penyaluran', label: '📤 Penyaluran' },
   { href: '/kas-masjid', label: '🕌 Kas Masjid' },
+  { href: '/laporan', label: '📄 Laporan' },
 ]
 
 export default function Navbar() {
@@ -18,10 +19,10 @@ export default function Navbar() {
   return (
     <nav className="bg-emerald-700 text-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="font-bold text-lg">
+        <Link href="/" className="font-bold text-lg flex-shrink-0">
           🕌 ZakatKu
         </Link>
-        <div className="flex gap-1 flex-wrap">
+        <div className="flex gap-1 flex-wrap justify-end">
           {menu.map((m) => (
             <Link
               key={m.href}
