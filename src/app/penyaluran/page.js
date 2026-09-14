@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { cetakBuktiPenyaluran } from '@/lib/pdf-helper'
 
 export default function PenyaluranPage() {
   const [uangSiap, setUangSiap] = useState(0)
@@ -14,6 +15,7 @@ export default function PenyaluranPage() {
   const [riwayat, setRiwayat] = useState([])
   const [loading, setLoading] = useState(true)
   const [proses, setProses] = useState(false)
+  const [cetakLoading, setCetakLoading] = useState(null)
   const [showPreview, setShowPreview] = useState(false)
   const [previewJenis, setPreviewJenis] = useState('uang')
 
@@ -93,6 +95,28 @@ export default function PenyaluranPage() {
     fetchData()
   }, [])
 
+  // === FUNGSI CETAK ===
+  async function handleCetak(penyaluran) {
+    setCetakLoading(penyaluran.id)
+    try {
+      // Ambil daftar penerima dari penyaluran_detail
+      const { data: detail } = await supabase
+        .from('penyaluran_detail')
+        .select('nilai_diterima, mustahik:mustahik_id(nama, asnaf, alamat)')
+        .eq('penyaluran_id', penyaluran.id)
+
+      const daftarPenerima = (detail || []).map((d) => ({
+        nama: d.mustahik?.nama || '-',
+        asnaf: d.mustahik?.asnaf || '-',
+      }))
+
+      cetakBuktiPenyaluran(penyaluran, daftarPenerima)
+    } catch (err) {
+      alert('Gagal cetak: ' + err.message)
+    }
+    setCetakLoading(null)
+  }
+
   const perOrangUang =
     penerimaUang.length > 0
       ? Math.floor(uangSiap / penerimaUang.length / 100) * 100
@@ -130,7 +154,7 @@ export default function PenyaluranPage() {
 
   async function eksekusiUang() {
     const totalDibagikan = perOrangUang * penerimaUang.length
-    const kode = 'ZK-OUT-' + Date.now()
+    const kode = `ZK-OUT-${Date.now()}`
 
     const { data: header, error: errH } = await supabase
       .from('penyaluran')
@@ -180,7 +204,7 @@ export default function PenyaluranPage() {
 
   async function eksekusiBeras() {
     const totalDibagikan = perOrangBeras * penerimaBeras.length
-    const kode = 'ZK-OUT-' + Date.now()
+    const kode = `ZK-OUT-${Date.now()}`
 
     const { data: header, error: errH } = await supabase
       .from('penyaluran')
@@ -350,6 +374,14 @@ export default function PenyaluranPage() {
                         </td>
                         <td className="px-3 py-2 text-center text-slate-700">{r.jumlah_penerima}</td>
                         <td className="px-3 py-2 text-center whitespace-nowrap">
+                          <button
+                            onClick={() => handleCetak(r)}
+                            disabled={cetakLoading === r.id}
+                            className="text-emerald-700 hover:underline mr-2 disabled:opacity-50"
+                            title="Cetak bukti PDF"
+                          >
+                            {cetakLoading === r.id ? '⏳' : '🖨️'} Cetak
+                          </button>
                           <button
                             onClick={() => hapusPenyaluran(r.id)}
                             className="text-red-600 hover:underline text-xs"
