@@ -41,40 +41,63 @@ export default function MuzakkiPage() {
     fetchData()
   }, [])
 
-  // Buka modal riwayat jiwa
+  // === BUKA MODAL RIWAYAT JIWA ===
   async function bukaJiwa(muzakki) {
     setJiwaMuzakki(muzakki)
     setShowJiwa(true)
     setJiwaLoading(true)
+    setJiwaData([])
 
-    // Ambil semua penerimaan untuk muzakki ini
-    const { data: penerimaanList } = await supabase
-      .from('penerimaan')
-      .select('id, kode, tanggal, created_at')
-      .eq('muzakki_id', muzakki.id)
-      .order('created_at', { ascending: false })
+    try {
+      // 1. Ambil semua penerimaan untuk muzakki ini
+      const { data: penerimaanList, error: errP } = await supabase
+        .from('penerimaan')
+        .select('id, kode, tanggal, created_at')
+        .eq('muzakki_id', muzakki.id)
+        .order('created_at', { ascending: false })
 
-    if (!penerimaanList || penerimaanList.length === 0) {
-      setJiwaData([])
-      setJiwaLoading(false)
-      return
+      console.log('Penerimaan untuk muzakki', muzakki.nama, ':', penerimaanList?.length)
+
+      if (errP) {
+        console.error('Error ambil penerimaan:', errP)
+        setJiwaLoading(false)
+        return
+      }
+
+      if (!penerimaanList || penerimaanList.length === 0) {
+        setJiwaData([])
+        setJiwaLoading(false)
+        return
+      }
+
+      // 2. Ambil semua jiwa untuk penerimaan-penerimaan itu
+      const ids = penerimaanList.map((p) => p.id)
+
+      const { data: jiwaList, error: errJ } = await supabase
+        .from('penerimaan_jiwa')
+        .select('*')
+        .in('penerimaan_id', ids)
+        .order('urutan')
+
+      console.log('Total jiwa untuk muzakki ini:', jiwaList?.length)
+
+      if (errJ) {
+        console.error('Error ambil jiwa:', errJ)
+      }
+
+      // 3. Group per transaksi
+      const grouped = penerimaanList.map((p) => ({
+        ...p,
+        jiwa: (jiwaList || []).filter((j) => j.penerimaan_id === p.id),
+      }))
+
+      console.log('Grouped data:', grouped)
+
+      setJiwaData(grouped)
+    } catch (err) {
+      console.error('Error bukaJiwa:', err)
     }
 
-    // Ambil semua jiwa untuk penerimaan-penerimaan itu
-    const ids = penerimaanList.map((p) => p.id)
-    const { data: jiwaList } = await supabase
-      .from('penerimaan_jiwa')
-      .select('*')
-      .in('penerimaan_id', ids)
-      .order('urutan')
-
-    // Gabungkan
-    const grouped = penerimaanList.map((p) => ({
-      ...p,
-      jiwa: (jiwaList || []).filter((j) => j.penerimaan_id === p.id),
-    }))
-
-    setJiwaData(grouped)
     setJiwaLoading(false)
   }
 
@@ -313,7 +336,7 @@ export default function MuzakkiPage() {
       {showJiwa && jiwaMuzakki && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full my-8">
-            <div className="px-6 py-4 border-b sticky top-0 bg-white rounded-t-2xl">
+            <div className="px-6 py-4 border-b sticky top-0 bg-white rounded-t-2xl z-10">
               <h2 className="text-lg md:text-xl font-bold text-slate-800">
                 👨‍👩‍👧 Riwayat Jiwa: {jiwaMuzakki.nama}
               </h2>
@@ -324,24 +347,33 @@ export default function MuzakkiPage() {
 
             <div className="p-6 max-h-[60vh] overflow-y-auto">
               {jiwaLoading ? (
-                <div className="text-center text-slate-500 py-8">Memuat riwayat...</div>
+                <div className="text-center text-slate-500 py-8">
+                  Memuat riwayat...
+                </div>
               ) : jiwaData.length === 0 ? (
                 <div className="text-center text-slate-500 py-8">
                   <p className="text-2xl mb-2">📭</p>
                   <p>Belum ada riwayat penerimaan untuk muzakki ini.</p>
-                  <p className="text-xs mt-2">Riwayat akan muncul setelah ada transaksi penerimaan.</p>
+                  <p className="text-xs mt-2 text-slate-400">
+                    Riwayat akan muncul setelah ada transaksi penerimaan.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {jiwaData.map((transaksi, idx) => (
-                    <div key={transaksi.id} className="border rounded-lg overflow-hidden">
+                    <div
+                      key={transaksi.id}
+                      className="border border-slate-200 rounded-lg overflow-hidden"
+                    >
                       <div className="bg-slate-100 px-4 py-2">
                         <p className="font-semibold text-slate-800 text-sm">
                           📅 Transaksi {jiwaData.length - idx}: {transaksi.kode}
                         </p>
-                        <p className="text-xs text-slate-600">Tanggal: {transaksi.tanggal}</p>
+                        <p className="text-xs text-slate-600">
+                          Tanggal: {transaksi.tanggal}
+                        </p>
                       </div>
-                      <div className="divide-y">
+                      <div className="divide-y divide-slate-100">
                         {transaksi.jiwa.length === 0 ? (
                           <div className="p-3 text-center text-xs text-slate-400">
                             (Data nama jiwa tidak tersimpan untuk transaksi ini)
@@ -350,7 +382,7 @@ export default function MuzakkiPage() {
                           transaksi.jiwa.map((j, i) => (
                             <div
                               key={j.id}
-                              className="px-4 py-2 flex items-center justify-between"
+                              className="px-4 py-2 flex items-center justify-between hover:bg-slate-50"
                             >
                               <div className="flex items-center gap-3">
                                 <span className="text-xs font-bold text-slate-500 w-6">
@@ -361,7 +393,9 @@ export default function MuzakkiPage() {
                                 </span>
                               </div>
                               <span className="text-xs text-slate-500">
-                                {j.is_kepala_keluarga ? '👤 Kepala Keluarga' : '👥 Anggota'}
+                                {j.is_kepala_keluarga
+                                  ? '👤 Kepala Keluarga'
+                                  : '👥 Anggota'}
                               </span>
                             </div>
                           ))
