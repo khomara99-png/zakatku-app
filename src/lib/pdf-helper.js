@@ -289,3 +289,187 @@ export function cetakBuktiPenyaluran(data, daftarPenerima) {
 
   doc.save(`Bukti-Penyaluran-${data.kode}.pdf`)
 }
+// ==================
+// LAPORAN DAFTAR MUZAKKI
+// ==================
+export function cetakLaporanMuzakki(muzakkiList, jiwaMap, periode) {
+  const doc = new jsPDF('p', 'mm', 'a4')
+  const pageWidth = doc.internal.pageSize.getWidth()
+
+  gambarKop(doc)
+
+  // Judul
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(14)
+  doc.setTextColor(40, 40, 40)
+  doc.text('DAFTAR MUZAKKI', pageWidth / 2, 61, { align: 'center' })
+  doc.setFontSize(11)
+  doc.text('(Pemberi Zakat Fitrah)', pageWidth / 2, 67, { align: 'center' })
+
+  // Info periode
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(9)
+  doc.setTextColor(0, 0, 0)
+  doc.text(
+    `Periode: ${periode.dari || '-'} s/d ${periode.sampai || '-'}`,
+    pageWidth / 2,
+    73,
+    { align: 'center' }
+  )
+  doc.text(`Total: ${muzakkiList.length} Muzakki`, pageWidth / 2, 78, {
+    align: 'center',
+  })
+
+  // Siapkan data tabel
+  const rows = []
+  muzakkiList.forEach((m, i) => {
+    const no = i + 1
+    const alamat = `${m.alamat || '-'} ${m.rt ? `(RT ${m.rt})` : ''}`
+
+    // Baris kepala keluarga
+    rows.push([
+      { content: no, styles: { halign: 'center', fontStyle: 'bold' } },
+      { content: m.nama, styles: { fontStyle: 'bold' } },
+      alamat,
+    ])
+
+    // Baris anggota keluarga (kalau ada)
+    const anggota = jiwaMap[m.id] || []
+    anggota
+      .filter((j) => !j.is_kepala_keluarga)
+      .forEach((j) => {
+        rows.push([
+          { content: '', styles: { halign: 'center' } },
+          { content: `    └─ ${j.nama}`, styles: { textColor: [80, 80, 80] } },
+          { content: '', styles: {} },
+        ])
+      })
+  })
+
+  autoTable(doc, {
+    startY: 82,
+    head: [['No', 'Nama Muzakki', 'Alamat']],
+    body: rows.map((r) => r.map((c) => (typeof c === 'string' ? c : c.content))),
+    theme: 'grid',
+    headStyles: {
+      fillColor: [16, 185, 129],
+      textColor: 255,
+      fontSize: 10,
+      halign: 'center',
+    },
+    bodyStyles: { fontSize: 9, textColor: [40, 40, 40] },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 15 },
+      1: { cellWidth: 70 },
+      2: { cellWidth: 'auto' },
+    },
+    margin: { left: 14, right: 14 },
+    didParseCell: function (data) {
+      // Handle baris anggota (indent)
+      if (data.section === 'body' && data.column.index === 1) {
+        const cellContent = data.cell.raw || ''
+        if (typeof cellContent === 'string' && cellContent.startsWith('    └─')) {
+          data.cell.styles.textColor = [100, 100, 100]
+          data.cell.styles.fontStyle = 'italic'
+          data.cell.styles.fontSize = 8.5
+        }
+      }
+    },
+  })
+
+  // Footer
+  const finalY = doc.lastAutoTable.finalY + 10
+  doc.setFontSize(8)
+  doc.setTextColor(150, 150, 150)
+  doc.text(
+    `Dicetak: ${tanggalIndo(new Date().toISOString().slice(0, 10))}`,
+    pageWidth / 2,
+    finalY,
+    { align: 'center' }
+  )
+  doc.text(
+    'Laporan ini dibuat otomatis oleh sistem ZakatKu',
+    pageWidth / 2,
+    doc.internal.pageSize.getHeight() - 10,
+    { align: 'center' }
+  )
+
+  doc.save(`Laporan-Muzakki-${Date.now()}.pdf`)
+}
+
+// ==================
+// LAPORAN DAFTAR MUSTAHIK
+// ==================
+export function cetakLaporanMustahik(mustahikList, periode) {
+  const doc = new jsPDF('p', 'mm', 'a4')
+  const pageWidth = doc.internal.pageSize.getWidth()
+
+  gambarKop(doc)
+
+  // Judul
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(14)
+  doc.setTextColor(40, 40, 40)
+  doc.text('DAFTAR MUSTAHIK', pageWidth / 2, 61, { align: 'center' })
+  doc.setFontSize(11)
+  doc.text('(Penerima Zakat Fitrah)', pageWidth / 2, 67, { align: 'center' })
+
+  // Info periode
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(9)
+  doc.setTextColor(0, 0, 0)
+  doc.text(
+    `Periode: ${periode.dari || '-'} s/d ${periode.sampai || '-'}`,
+    pageWidth / 2,
+    73,
+    { align: 'center' }
+  )
+  doc.text(`Total: ${mustahikList.length} Mustahik`, pageWidth / 2, 78, {
+    align: 'center',
+  })
+
+  // Siapkan data tabel
+  const rows = mustahikList.map((m, i) => {
+    const alamat = `${m.alamat || '-'} ${m.rt ? `(RT ${m.rt})` : ''}`
+    return [i + 1, m.nama, alamat]
+  })
+
+  autoTable(doc, {
+    startY: 82,
+    head: [['No', 'Nama Mustahik', 'Alamat']],
+    body: rows,
+    theme: 'grid',
+    headStyles: {
+      fillColor: [16, 185, 129],
+      textColor: 255,
+      fontSize: 10,
+      halign: 'center',
+    },
+    bodyStyles: { fontSize: 9, textColor: [40, 40, 40] },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 15 },
+      1: { cellWidth: 70 },
+      2: { cellWidth: 'auto' },
+    },
+    margin: { left: 14, right: 14 },
+  })
+
+  // Footer
+  const finalY = doc.lastAutoTable.finalY + 10
+  doc.setFontSize(8)
+  doc.setTextColor(150, 150, 150)
+  doc.text(
+    `Dicetak: ${tanggalIndo(new Date().toISOString().slice(0, 10))}`,
+    pageWidth / 2,
+    finalY,
+    { align: 'center' }
+  )
+  doc.text(
+    'Laporan ini dibuat otomatis oleh sistem ZakatKu',
+    pageWidth / 2,
+    doc.internal.pageSize.getHeight() - 10,
+    { align: 'center' }
+  )
+
+  doc.save(`Laporan-Mustahik-${Date.now()}.pdf`)
+}
