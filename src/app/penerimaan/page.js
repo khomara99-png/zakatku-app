@@ -60,7 +60,6 @@ export default function PenerimaanPage() {
   async function handleCetak(penerimaan) {
     setCetakLoading(penerimaan.id)
     try {
-      // Ambil detail jiwa
       const { data: jiwaData } = await supabase
         .from('penerimaan_jiwa')
         .select('*')
@@ -87,6 +86,7 @@ export default function PenerimaanPage() {
   const kewajibanUang = form.kategori === 'zakat_fitrah' ? nishabUang * jiwa : 0
   const kewajibanBeras = form.kategori === 'zakat_fitrah' ? nishabBeras * jiwa : 0
 
+  // Sync jiwaList dengan jumlah jiwa
   useEffect(() => {
     const currentCount = jiwaList.length
     const targetCount = jiwa || 0
@@ -220,9 +220,13 @@ export default function PenerimaanPage() {
 
     const jiwaSubmit = parseInt(form.jumlah_jiwa) || 1
 
+    // === VALIDASI: SEMUA NAMA JIWA WAJIB DIISI ===
     for (let i = 0; i < jiwaSubmit; i++) {
-      if (!jiwaList[i] || !jiwaList[i].nama.trim()) {
-        return alert(`❌ Nama jiwa ke-${i + 1} wajib diisi!`)
+      if (!jiwaList[i] || !jiwaList[i].nama || !jiwaList[i].nama.trim()) {
+        return alert(
+          `❌ Nama jiwa ke-${i + 1} wajib diisi!\n\n` +
+          `Silakan isi nama semua anggota keluarga di bagian "Detail Jiwa".`
+        )
       }
     }
 
@@ -274,17 +278,29 @@ export default function PenerimaanPage() {
     const muzakki = muzakkiList.find((x) => x.id === form.muzakki_id)
     const namaMuzakki = muzakki?.nama || 'Muzakki'
 
+    // === SUSUN DATA JIWA ===
     const jiwaData = jiwaList.slice(0, jiwaSubmit).map((j) => ({
       penerimaan_id: header.id,
       urutan: j.urutan,
-      nama: j.nama,
+      nama: j.nama.trim(),
       is_kepala_keluarga: j.is_kepala_keluarga,
-      alamat: j.alamat,
-      rt: j.rt,
+      alamat: j.alamat || null,
+      rt: j.rt || null,
     }))
 
+    // Debug log
+    console.log('🔍 DEBUG jiwaData:', JSON.stringify(jiwaData, null, 2))
+
+    // === INSERT KE penerimaan_jiwa ===
     const { error: errJiwa } = await supabase.from('penerimaan_jiwa').insert(jiwaData)
-    if (errJiwa) console.error('Gagal simpan jiwa:', errJiwa)
+    if (errJiwa) {
+      console.error('Gagal simpan jiwa:', errJiwa)
+      alert(
+        '⚠️ Gagal simpan detail jiwa!\n\n' +
+        'Error: ' + errJiwa.message + '\n\n' +
+        'Data penerimaan tetap tersimpan, tapi nama anggota TIDAK tersimpan.'
+      )
+    }
 
     const details = []
     let kelebihanUangUntukKas = 0
@@ -501,7 +517,7 @@ export default function PenerimaanPage() {
                   {form.muzakki_id && jiwa > 0 && (
                     <div className="border border-slate-200 rounded-lg overflow-hidden">
                       <div className="bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700">
-                        📋 Detail Jiwa ({jiwa} orang)
+                        📋 Detail Jiwa ({jiwa} orang) — <span className="text-red-600 font-bold">WAJIB DIISI SEMUA</span>
                       </div>
                       <div className="divide-y max-h-64 overflow-y-auto">
                         {jiwaList.slice(0, jiwa).map((j, i) => (
@@ -511,7 +527,7 @@ export default function PenerimaanPage() {
                               <div className="flex-1 space-y-2">
                                 <div>
                                   <label className="block text-xs text-slate-600 mb-1">
-                                    Nama {j.is_kepala_keluarga ? '(Kepala Keluarga)' : `(Anggota ${i})`}
+                                    Nama {j.is_kepala_keluarga ? '(Kepala Keluarga)' : `(Anggota ${i})`} *
                                   </label>
                                   <input
                                     type="text"
