@@ -31,29 +31,24 @@ function tanggalIndo(tgl) {
 function gambarKop(doc) {
   const pageWidth = doc.internal.pageSize.getWidth()
 
-  // Logo kiri 30x30
   try {
     doc.addImage(MASJID.logo, 'PNG', 14, 12, 30, 30)
   } catch (e) {
     console.warn('Logo tidak bisa dimuat:', e)
   }
 
-  // Area teks center di kanan logo
   const areaKiri = 48
   const areaKanan = pageWidth - 14
   const centerText = (areaKiri + areaKanan) / 2
 
-  // Baris 1: Nama DKM
   doc.setTextColor(40, 40, 40)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(13)
   doc.text(MASJID.nama1, centerText, 20, { align: 'center' })
 
-  // Baris 2: NURUL HUDA
   doc.setFontSize(20)
   doc.text(MASJID.nama2, centerText, 29, { align: 'center' })
 
-  // Baris 3-5: Alamat
   doc.setTextColor(90, 90, 90)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9.5)
@@ -61,7 +56,6 @@ function gambarKop(doc) {
   doc.text(MASJID.alamat2, centerText, 40.5, { align: 'center' })
   doc.text(MASJID.alamat3, centerText, 45, { align: 'center' })
 
-  // Garis embossed (abu terang + gelap)
   doc.setDrawColor(180, 180, 180)
   doc.setLineWidth(0.8)
   doc.line(14, 50.3, pageWidth - 14, 50.3)
@@ -73,12 +67,11 @@ function gambarKop(doc) {
   doc.setTextColor(0, 0, 0)
 }
 
-// === TANDA TANGAN (CENTER, TANPA GARIS) ===
+// === TANDA TANGAN ===
 function gambarTandaTangan(doc, tanggal) {
   const pageWidth = doc.internal.pageSize.getWidth()
   const y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : 200
 
-  // Tanggal kanan
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
   doc.setTextColor(0, 0, 0)
@@ -90,14 +83,12 @@ function gambarTandaTangan(doc, tanggal) {
   const col2X = pageWidth - 60
   const ttdY = y + 8
 
-  // Amil Zakat (kiri)
   doc.setFontSize(10)
   doc.text('Amil Zakat,', col1X, ttdY, { align: 'center' })
   doc.text('(............................)', col1X, ttdY + 30, {
     align: 'center',
   })
 
-  // Ketua DKM (kanan)
   doc.text('Ketua DKM,', col2X, ttdY, { align: 'center' })
   doc.text('(............................)', col2X, ttdY + 30, {
     align: 'center',
@@ -113,20 +104,17 @@ export function cetakBuktiPenerimaan(data) {
 
   gambarKop(doc)
 
-  // Judul
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(13)
   doc.setTextColor(40, 40, 40)
   doc.text('BUKTI PENERIMAAN ZAKAT', pageWidth / 2, 61, { align: 'center' })
 
-  // Info bukti
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
   doc.setTextColor(0, 0, 0)
   doc.text(`No. Bukti: ${data.kode}`, 14, 71)
   doc.text(`Tanggal  : ${tanggalIndo(data.tanggal)}`, 14, 76)
 
-  // Info muzakki
   doc.setFont('helvetica', 'bold')
   doc.text('Muzakki:', 14, 85)
 
@@ -135,7 +123,6 @@ export function cetakBuktiPenerimaan(data) {
   doc.text(`Alamat  : ${data.muzakki?.alamat || '-'}`, 14, 96)
   doc.text(`RT      : ${data.muzakki?.rt || '-'}`, 14, 101)
 
-  // Detail jiwa
   let currentY = 109
   if (data.jiwa && data.jiwa.length > 0) {
     doc.setFont('helvetica', 'bold')
@@ -162,7 +149,6 @@ export function cetakBuktiPenerimaan(data) {
     currentY = doc.lastAutoTable.finalY + 8
   }
 
-  // Rincian zakat
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
   doc.text('Rincian Zakat:', 14, currentY)
@@ -201,7 +187,6 @@ export function cetakBuktiPenerimaan(data) {
 
   gambarTandaTangan(doc, data.tanggal)
 
-  // Footer
   doc.setFontSize(8)
   doc.setTextColor(150, 150, 150)
   doc.text(
@@ -223,13 +208,11 @@ export function cetakBuktiPenyaluran(data, daftarPenerima) {
 
   gambarKop(doc)
 
-  // Judul
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(13)
   doc.setTextColor(40, 40, 40)
   doc.text('BUKTI PENYALURAN ZAKAT', pageWidth / 2, 61, { align: 'center' })
 
-  // Info bukti
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
   doc.setTextColor(0, 0, 0)
@@ -237,7 +220,6 @@ export function cetakBuktiPenyaluran(data, daftarPenerima) {
   doc.text(`Tanggal  : ${tanggalIndo(data.tanggal)}`, 14, 76)
   doc.text(`Jenis    : ${data.jenis === 'uang' ? 'Uang' : 'Beras'}`, 14, 81)
 
-  // Ringkasan
   const total = data.total_dibagikan || 0
   const perOrang = data.total_diterima_per_orang || 0
   const jumlah = data.jumlah_penerima || 0
@@ -254,7 +236,6 @@ export function cetakBuktiPenyaluran(data, daftarPenerima) {
   doc.text(`Per Orang       : ${perStr}`, 14, 102)
   doc.text(`Jumlah Penerima : ${jumlah} orang`, 14, 107)
 
-  // Tabel daftar penerima
   autoTable(doc, {
     startY: 114,
     head: [['No', 'Nama Penerima', 'Asnaf', 'Diterima']],
@@ -277,7 +258,6 @@ export function cetakBuktiPenyaluran(data, daftarPenerima) {
 
   gambarTandaTangan(doc, data.tanggal)
 
-  // Footer
   doc.setFontSize(8)
   doc.setTextColor(150, 150, 150)
   doc.text(
@@ -289,6 +269,7 @@ export function cetakBuktiPenyaluran(data, daftarPenerima) {
 
   doc.save(`Bukti-Penyaluran-${data.kode}.pdf`)
 }
+
 // ==================
 // LAPORAN DAFTAR MUZAKKI
 // ==================
@@ -298,7 +279,6 @@ export function cetakLaporanMuzakki(muzakkiList, jiwaMap, periode) {
 
   gambarKop(doc)
 
-  // Judul
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(14)
   doc.setTextColor(40, 40, 40)
@@ -306,7 +286,6 @@ export function cetakLaporanMuzakki(muzakkiList, jiwaMap, periode) {
   doc.setFontSize(11)
   doc.text('(Pemberi Zakat Fitrah)', pageWidth / 2, 67, { align: 'center' })
 
-  // Info periode
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
   doc.setTextColor(0, 0, 0)
@@ -320,36 +299,26 @@ export function cetakLaporanMuzakki(muzakkiList, jiwaMap, periode) {
     align: 'center',
   })
 
-  // Siapkan data tabel
   const rows = []
+
   muzakkiList.forEach((m, i) => {
     const no = i + 1
-    const alamat = `${m.alamat || '-'} ${m.rt ? `(RT ${m.rt})` : ''}`
+    const alamat = `${m.alamat || '-'}${m.rt ? ` (RT ${m.rt})` : ''}`
 
-    // Baris kepala keluarga
-    rows.push([
-      { content: no, styles: { halign: 'center', fontStyle: 'bold' } },
-      { content: m.nama, styles: { fontStyle: 'bold' } },
-      alamat,
-    ])
+    rows.push([String(no), m.nama, alamat])
 
-    // Baris anggota keluarga (kalau ada)
-    const anggota = jiwaMap[m.id] || []
-    anggota
-      .filter((j) => !j.is_kepala_keluarga)
-      .forEach((j) => {
-        rows.push([
-          { content: '', styles: { halign: 'center' } },
-          { content: `    └─ ${j.nama}`, styles: { textColor: [80, 80, 80] } },
-          { content: '', styles: {} },
-        ])
-      })
+    const anggota = (jiwaMap && jiwaMap[m.id]) || []
+    const anggotaSaja = anggota.filter((j) => !j.is_kepala_keluarga)
+
+    anggotaSaja.forEach((j) => {
+      rows.push(['', `      - ${j.nama}`, ''])
+    })
   })
 
   autoTable(doc, {
     startY: 82,
     head: [['No', 'Nama Muzakki', 'Alamat']],
-    body: rows.map((r) => r.map((c) => (typeof c === 'string' ? c : c.content))),
+    body: rows,
     theme: 'grid',
     headStyles: {
       fillColor: [16, 185, 129],
@@ -357,18 +326,17 @@ export function cetakLaporanMuzakki(muzakkiList, jiwaMap, periode) {
       fontSize: 10,
       halign: 'center',
     },
-    bodyStyles: { fontSize: 9, textColor: [40, 40, 40] },
+    bodyStyles: { fontSize: 9, textColor: [40, 40, 40], cellPadding: 2 },
     columnStyles: {
       0: { halign: 'center', cellWidth: 15 },
-      1: { cellWidth: 70 },
+      1: { cellWidth: 80 },
       2: { cellWidth: 'auto' },
     },
     margin: { left: 14, right: 14 },
     didParseCell: function (data) {
-      // Handle baris anggota (indent)
       if (data.section === 'body' && data.column.index === 1) {
-        const cellContent = data.cell.raw || ''
-        if (typeof cellContent === 'string' && cellContent.startsWith('    └─')) {
+        const val = String(data.cell.raw || '')
+        if (val.trim().startsWith('- ')) {
           data.cell.styles.textColor = [100, 100, 100]
           data.cell.styles.fontStyle = 'italic'
           data.cell.styles.fontSize = 8.5
@@ -377,7 +345,6 @@ export function cetakLaporanMuzakki(muzakkiList, jiwaMap, periode) {
     },
   })
 
-  // Footer
   const finalY = doc.lastAutoTable.finalY + 10
   doc.setFontSize(8)
   doc.setTextColor(150, 150, 150)
@@ -406,7 +373,6 @@ export function cetakLaporanMustahik(mustahikList, periode) {
 
   gambarKop(doc)
 
-  // Judul
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(14)
   doc.setTextColor(40, 40, 40)
@@ -414,7 +380,6 @@ export function cetakLaporanMustahik(mustahikList, periode) {
   doc.setFontSize(11)
   doc.text('(Penerima Zakat Fitrah)', pageWidth / 2, 67, { align: 'center' })
 
-  // Info periode
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
   doc.setTextColor(0, 0, 0)
@@ -428,9 +393,8 @@ export function cetakLaporanMustahik(mustahikList, periode) {
     align: 'center',
   })
 
-  // Siapkan data tabel
   const rows = mustahikList.map((m, i) => {
-    const alamat = `${m.alamat || '-'} ${m.rt ? `(RT ${m.rt})` : ''}`
+    const alamat = `${m.alamat || '-'}${m.rt ? ` (RT ${m.rt})` : ''}`
     return [i + 1, m.nama, alamat]
   })
 
@@ -445,16 +409,15 @@ export function cetakLaporanMustahik(mustahikList, periode) {
       fontSize: 10,
       halign: 'center',
     },
-    bodyStyles: { fontSize: 9, textColor: [40, 40, 40] },
+    bodyStyles: { fontSize: 9, textColor: [40, 40, 40], cellPadding: 2 },
     columnStyles: {
       0: { halign: 'center', cellWidth: 15 },
-      1: { cellWidth: 70 },
+      1: { cellWidth: 80 },
       2: { cellWidth: 'auto' },
     },
     margin: { left: 14, right: 14 },
   })
 
-  // Footer
   const finalY = doc.lastAutoTable.finalY + 10
   doc.setFontSize(8)
   doc.setTextColor(150, 150, 150)
