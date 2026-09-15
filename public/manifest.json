@@ -1,0 +1,26 @@
+{
+  "name": "ZakatKu - DKM Nurul Huda",
+  "short_name": "ZakatKu",
+  "description": "Aplikasi Penerimaan & Penyaluran Zakat Fitrah - DKM Nurul Huda",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#10B981",
+  "theme_color": "#10B981",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "/zakatku-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/zakatku-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
